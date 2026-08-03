@@ -18,8 +18,9 @@ class PinballGame {
         this.deltaTime = 0;
 
         // Physics parameters
-        this.gravity = 30;
+        this.gravity = 25; // Gravity acceleration
         this.gravityStrength = 15;
+        this.airResistance = 0.98; // Air friction coefficient
 
         // Keyboard input
         this.keys = {
@@ -134,9 +135,6 @@ class PinballGame {
             radius: 0.25
         };
 
-        // Plunger zone for ball launch
-        this.plungerZone = new BABYLON.Vector3(0.4, 0.5, playfieldLength / 2 + 0.2);
-
         // Backbox panel for visual effect
         const backbox = BABYLON.MeshBuilder.CreateBox('backbox', {
             width: playfieldWidth * 1.2,
@@ -158,6 +156,9 @@ class PinballGame {
             length: playfieldLength,
             tiltAngle: tiltAngle
         };
+
+        // Plunger zone for ball launch (right side, bottom area)
+        this.plungerZone = new BABYLON.Vector3(0.35, 0.2, playfieldLength / 2 - 0.1);
     }
 
     createFlippers() {
@@ -393,28 +394,34 @@ class PinballGame {
             return;
         }
 
-        const ballMesh = BABYLON.MeshBuilder.CreateSphere('ball', {
-            diameter: 0.055,
+        const ballRadius = 0.035; // Slightly larger for visibility
+        const ballMesh = BABYLON.MeshBuilder.CreateSphere('ball_' + Date.now(), {
+            diameter: ballRadius * 2,
             segments: 32
         }, this.scene);
 
         ballMesh.position = this.plungerZone.clone();
 
         const ballMaterial = new BABYLON.StandardMaterial('ballMat_' + Date.now(), this.scene);
-        ballMaterial.diffuse = new BABYLON.Color3(1, 1, 1);
+        ballMaterial.diffuse = new BABYLON.Color3(1, 0.2, 0.2); // Bright red
         ballMaterial.specularColor = new BABYLON.Color3(1, 1, 1);
-        ballMaterial.specularPower = 128;
-        ballMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+        ballMaterial.specularPower = 64;
+        ballMaterial.emissiveColor = new BABYLON.Color3(0.5, 0.1, 0.1); // Reddish glow
         ballMesh.material = ballMaterial;
+
+        // Add to glow layer for better visibility - with glow intensity
+        this.glow.addIncludedOnlyMesh(ballMesh);
+        this.glow.intensity = 1.5;
 
         this.currentBalls.push({
             mesh: ballMesh,
             position: ballMesh.position.clone(),
             velocity: new BABYLON.Vector3(0, 0, 0),
-            radius: 0.0275,
+            radius: ballRadius,
             mass: 1,
             launchTime: 0,
-            active: true
+            active: true,
+            launchPower: 0
         });
 
         this.launched = false;
@@ -447,56 +454,70 @@ class PinballGame {
         this.currentBalls = this.currentBalls.filter(ball => {
             if (!ball.active) return false;
 
+            // Limit deltaTime to prevent physics instability
+            const dt = Math.min(deltaTime, 0.016); // Cap at 60fps worth of time
+
             // Apply gravity
-            ball.velocity.y -= this.gravity * deltaTime;
+            ball.velocity.y -= this.gravity * dt;
 
-            // Apply tilt gravity (makes ball roll down)
-            const tiltForce = Math.sin(this.playfield.tiltAngle) * 8;
-            ball.velocity.z -= tiltForce * deltaTime;
+            // Apply tilt gravity (makes ball roll down the inclined playfield)
+            const tiltForce = Math.sin(this.playfield.tiltAngle) * 9;
+            ball.velocity.z -= tiltForce * dt;
 
-            // Air resistance
-            ball.velocity.scale(0.99);
+            // Air resistance / friction
+            ball.velocity.x *= this.airResistance;
+            ball.velocity.y *= 0.999;
+            ball.velocity.z *= this.airResistance;
 
             // Update position
-            ball.position.x += ball.velocity.x * deltaTime;
-            ball.position.y += ball.velocity.y * deltaTime;
-            ball.position.z += ball.velocity.z * deltaTime;
+            ball.position.x += ball.velocity.x * dt;
+            ball.position.y += ball.velocity.y * dt;
+            ball.position.z += ball.velocity.z * dt;
             ball.mesh.position = ball.position.clone();
 
-            // Playfield collision (simple plane collision)
-            if (ball.position.y < 0.02) {
-                ball.position.y = 0.02;
-                ball.velocity.y *= -0.85; // Bounce
+            // Playfield collision (playing surface at y = 0)
+            if (ball.position.y < ball.radius) {
+                ball.position.y = ball.radius;
+                ball.velocity.y *= -0.80; // Bounce with energy loss
 
-                // Friction on playfield
-                const frictionFactor = 0.97;
+                // Friction on playfield - higher friction when moving slowly
+                const speedXZ = Math.sqrt(ball.velocity.x * ball.velocity.x + ball.velocity.z * ball.velocity.z);
+                const frictionFactor = speedXZ > 0.5 ? 0.96 : 0.93;
                 ball.velocity.x *= frictionFactor;
                 ball.velocity.z *= frictionFactor;
+
+                // Stop ball if velocity is very small
+                if (speedXZ < 0.1) {
+                    ball.velocity.x *= 0.8;
+                    ball.velocity.z *= 0.8;
+                }
             }
 
-            // Side wall collisions
+            // Side wall collisions with some elasticity
             const wallTolerance = this.playfield.width / 2 - ball.radius;
             if (Math.abs(ball.position.x) > wallTolerance) {
                 ball.position.x = Math.sign(ball.position.x) * wallTolerance;
-                ball.velocity.x *= -0.8; // Bounce
+                ball.velocity.x *= -0.75; // Bounce
+                ball.velocity.y *= 0.95; // Slight vertical dampening on wall hit
             }
 
-            // Back wall collision
-            if (ball.position.z < -this.playfield.length / 2) {
-                ball.position.z = -this.playfield.length / 2;
-                ball.velocity.z *= -0.6;
+            // Back wall collision (behind playfield)
+            const backWallZ = -this.playfield.length / 2 - ball.radius;
+            if (ball.position.z < backWallZ) {
+                ball.position.z = backWallZ;
+                ball.velocity.z *= -0.65;
             }
 
-            // Check for drain
+            // Check for drain (ball lost)
             if (ball.position.y < -1.5) {
                 ball.mesh.dispose();
                 this.ballsLeft--;
                 this.updateUI();
 
                 if (this.ballsLeft > 0 && !this.gameOver) {
-                    setTimeout(() => this.launchBall(), 500);
+                    setTimeout(() => this.launchBall(), 800);
                 } else if (this.ballsLeft <= 0) {
-                    setTimeout(() => this.endGame(), 500);
+                    setTimeout(() => this.endGame(), 800);
                 }
                 return false;
             }
@@ -626,17 +647,26 @@ class PinballGame {
     }
 
     updateLaunch(deltaTime) {
-        if (this.keys.launch && !this.launched && this.currentBalls.length > 0) {
-            const launchBall = this.currentBalls[0];
+        if (this.currentBalls.length === 0) return;
 
+        const launchBall = this.currentBalls[0];
+
+        // Only launch the first ball if it hasn't been launched yet and is in the plunger zone
+        const isInPlungerZone = BABYLON.Vector3.Distance(launchBall.position, this.plungerZone) < 0.3;
+
+        if (this.keys.launch && !this.launched && isInPlungerZone) {
             launchBall.launchTime += deltaTime;
-            const power = Math.min(launchBall.launchTime, 0.3) / 0.3;
-            launchBall.velocity.z = -12 * power;
-        } else if (!this.keys.launch && this.currentBalls.length > 0) {
-            const launchBall = this.currentBalls[0];
-            if (launchBall.launchTime > 0) {
+            const power = Math.min(launchBall.launchTime, 0.4) / 0.4; // Extended to 0.4 seconds
+            launchBall.launchPower = power;
+            launchBall.velocity.z = -15 * power; // Increased launch force
+        } else if (!this.keys.launch && this.currentBalls.length > 0 && isInPlungerZone) {
+            if (launchBall.launchTime > 0.05) { // Only register if pressed for at least 50ms
                 this.launched = true;
                 launchBall.launchTime = 0;
+                launchBall.launchPower = 0;
+            } else if (launchBall.launchTime > 0) {
+                launchBall.launchTime = 0;
+                launchBall.velocity.z = 0;
             }
         }
     }

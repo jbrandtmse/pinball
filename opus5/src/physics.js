@@ -473,6 +473,12 @@
 
     for (i = 0; i < this.balls.length; i++) {
       b = this.balls[i];
+      if (b.state === 'ramp' && b.ramp) {
+        b.age += dt;
+        var res = b.ramp.path.step(b, dt);
+        if (res !== 'run' && this.onRampEnd) this.onRampEnd(b, res);
+        continue;
+      }
       if (b.state !== 'field') continue;
       b.age += dt;
       b.px = b.x; b.py = b.y;
