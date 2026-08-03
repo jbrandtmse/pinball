@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>RAGNARÖK — Hammer of the Gods | Pinball</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="game"></canvas>
+
+  <!-- Boot / click-to-start veil (needed to unlock WebAudio) -->
+  <div id="boot" class="veil">
+    <div class="boot-inner">
+      <div class="boot-runes">&#5794;&#5809;&#5815;&#5822;&#5792;&#5809;&#5794;</div>
+      <h1>RAGNAR<span class="o">Ö</span>K</h1>
+      <h2>Hammer of the Gods</h2>
+      <div class="boot-sub">A Williams&nbsp;&mdash;&nbsp;style solid state pinball machine</div>
+      <button id="bootBtn">INSERT COIN</button>
+      <div class="boot-hint">Press <b>ENTER</b> to start a game once the machine powers up</div>
+    </div>
+  </div>
+
+  <!-- Help overlay -->
+  <div id="help" class="veil hidden">
+    <div class="panel">
+      <h3>OPERATOR MENU &mdash; CONTROLS</h3>
+      <table class="keys">
+        <tr><td><kbd>Left Shift</kbd> <span>/</span> <kbd>&larr;</kbd></td><td>Left flipper <em>(also the upper-left flipper)</em></td></tr>
+        <tr><td><kbd>Right Shift</kbd> <span>/</span> <kbd>&rarr;</kbd></td><td>Right flipper</td></tr>
+        <tr><td><kbd>Space</kbd> <span>/</span> <kbd>&darr;</kbd></td><td>Plunger &mdash; <b>hold to pull back, release to launch</b></td></tr>
+        <tr><td><kbd>Z</kbd></td><td>Nudge left</td></tr>
+        <tr><td><kbd>X</kbd> <span>/</span> <kbd>&uarr;</kbd></td><td>Nudge forward</td></tr>
+        <tr><td><kbd>C</kbd></td><td>Nudge right</td></tr>
+        <tr><td><kbd>Enter</kbd> <span>/</span> <kbd>1</kbd></td><td>Start game &mdash; hold at game over to add players</td></tr>
+        <tr><td><kbd>5</kbd></td><td>Insert coin</td></tr>
+        <tr><td><kbd>Esc</kbd> <span>/</span> <kbd>P</kbd></td><td>Pause</td></tr>
+        <tr><td><kbd>H</kbd></td><td>High scores</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Mute / unmute</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
+        <tr><td><kbd>F1</kbd> <span>/</span> <kbd>?</kbd></td><td>This screen</td></tr>
+        <tr><td><kbd>F3</kbd></td><td>Physics debug overlay</td></tr>
+      </table>
+      <div class="tiltwarn">Nudge too hard and the plumb bob makes contact &mdash; <b>TILT</b> forfeits your ball.</div>
+      <button id="helpClose">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<script src="src/util.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/physics.js"></script>
+<script src="src/dmdfont.js"></script>
+<script src="src/dmd.js"></script>
+<script src="src/table.js"></script>
+<script src="src/art.js"></script>
+<script src="src/render.js"></script>
+<script src="src/highscore.js"></script>
+<script src="src/rules.js"></script>
+<script src="src/input.js"></script>
+<script src="src/game.js"></script>
+</body>
+</html>

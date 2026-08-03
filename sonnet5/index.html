@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kraken's Gold &mdash; Pinball</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%99%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="cabinet">
+
+  <div id="backbox">
+    <div id="marquee">
+      <span class="marquee-title">KRAKEN'S <span class="gold">GOLD</span></span>
+      <span class="marquee-sub">&#9875; a pirate's pinball adventure &#9875;</span>
+    </div>
+    <div id="dmd-frame">
+      <canvas id="dmd" width="512" height="128"></canvas>
+      <div id="dmd-glass"></div>
+    </div>
+  </div>
+
+  <div id="apron">
+    <div class="apron-label left">BALL SAVE</div>
+    <div class="apron-lamps" id="apron-lamps"></div>
+    <div class="apron-label right">TILT</div>
+  </div>
+
+  <div id="playfield-stage">
+    <div id="playfield-tilt">
+      <canvas id="playfield"></canvas>
+    </div>
+    <div id="side-rail-left" class="side-rail"></div>
+    <div id="side-rail-right" class="side-rail"></div>
+  </div>
+
+  <div id="lockbar">
+    <div id="lockbar-shine"></div>
+  </div>
+
+  <div id="start-overlay">
+    <div class="panel">
+      <div class="title-flash">KRAKEN'S GOLD</div>
+      <div class="hint">Press <kbd>1</kbd>&ndash;<kbd>4</kbd> to choose players, then <kbd>Enter</kbd> to start</div>
+      <div class="controls-grid">
+        <div class="ctrl"><kbd>Left Shift</kbd> / <kbd>Z</kbd><span>Left Flipper</span></div>
+        <div class="ctrl"><kbd>Right Shift</kbd> / <kbd>/</kbd><span>Right Flipper</span></div>
+        <div class="ctrl"><kbd>Enter</kbd> / <kbd>Space</kbd><span>Plunger (hold &amp; release)</span></div>
+        <div class="ctrl"><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd><span>Nudge Table</span></div>
+        <div class="ctrl"><kbd>P</kbd><span>Pause</span></div>
+        <div class="ctrl"><kbd>M</kbd><span>Mute Audio</span></div>
+      </div>
+      <div class="hiscore-list" id="attract-hiscores"></div>
+      <div class="blink">PRESS ENTER TO START</div>
+    </div>
+  </div>
+
+  <div id="pause-overlay" class="hidden">
+    <div class="panel">
+      <div class="title-flash">PAUSED</div>
+      <div class="hint">Press <kbd>P</kbd> to resume</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="js/vector.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/table.js"></script>
+<script src="js/dmd.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/highscores.js"></script>
+<script src="js/input.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
