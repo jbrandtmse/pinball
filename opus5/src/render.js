@@ -13,16 +13,20 @@
   R.debug = false;
 
   /* ================================================================ LAYOUT */
+  R.MIN_PANEL = 236;
+  R.MAX_PANEL = 400;
+
   R.layout = function (W, H) {
-    var pad = Math.round(Math.min(W, H) * 0.018);
+    var pad = Math.round(U.clamp(Math.min(W, H) * 0.018, 8, 22));
     var pfH = H - pad * 2;
     var pfW = pfH * R.PF_ASPECT;
-    var minPanel = 260;
     var compact = false;
 
-    if (W - pfW < minPanel * 2) {
-      var want = (W - minPanel * 2) / R.PF_ASPECT;
-      if (want > H * 0.58) { pfH = Math.min(pfH, want); pfW = pfH * R.PF_ASPECT; }
+    // Not enough room for two side panels? Shrink the playfield a little, and
+    // only fall back to the compact single-column view when that isn't enough.
+    if (W - pfW - pad * 4 < R.MIN_PANEL * 2) {
+      var want = (W - pad * 4 - R.MIN_PANEL * 2) / R.PF_ASPECT;
+      if (want > H * 0.62) { pfH = Math.min(pfH, want); pfW = pfH * R.PF_ASPECT; }
       else compact = true;
     }
     if (compact) {
@@ -31,22 +35,24 @@
       if (pfW > W - pad * 2) { pfW = W - pad * 2; pfH = pfW / R.PF_ASPECT; }
     }
 
-    var pfX = Math.round((W - pfW) / 2);
+    var panelW = compact ? 0 :
+      U.clamp((W - pfW) / 2 - pad * 1.5, R.MIN_PANEL, R.MAX_PANEL);
+    var totalW = compact ? pfW : (panelW * 2 + pfW + pad * 2);
+    var x0 = Math.round((W - totalW) / 2);
+    var pfX = Math.round(compact ? x0 : x0 + panelW + pad);
     var pfY = Math.round((H - pfH) / 2);
-    var side = pfX - pad;
 
     var L = {
       W: W, H: H, pad: pad, compact: compact,
       pf: { x: pfX, y: pfY, w: pfW, h: pfH, scale: pfW / T.W },
-      left: { x: pad, y: pfY, w: Math.max(0, side - pad), h: pfH },
-      right: { x: pfX + pfW + pad, y: pfY, w: Math.max(0, side - pad), h: pfH }
+      left: { x: x0, y: pfY, w: panelW, h: pfH },
+      right: { x: Math.round(pfX + pfW + pad), y: pfY, w: panelW, h: pfH }
     };
-    // DMD sits at the top of the right panel (or overlaid at the top when compact)
     if (compact) {
       var dw = Math.min(W - pad * 2, pfW * 1.02);
-      L.dmd = { x: Math.round((W - dw) / 2), y: pad, w: dw, h: Math.round(dw / 4.6) };
+      L.dmd = { x: Math.round((W - dw) / 2), y: pad, w: dw, h: Math.round(dw / 4.4) };
     } else {
-      L.dmd = { x: L.right.x, y: L.right.y, w: L.right.w, h: Math.round(L.right.w / 4.2) };
+      L.dmd = { x: L.right.x, y: L.right.y, w: panelW, h: Math.round(panelW / 4.05) };
     }
     return L;
   };
@@ -175,20 +181,14 @@
       ctx.fillRect(0, 0, T.W, T.H);
       ctx.restore();
     }
-    // warm lamp pools from the GI strings
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    var pools = [[110, 250], [420, 250], [70, 620], [460, 620], [130, 900], [390, 900], [264, 480], [250, 1080]];
-    for (var i = 0; i < pools.length; i++) {
-      var p = pools[i];
-      var gr = ctx.createRadialGradient(p[0], p[1], 4, p[0], p[1], 170);
-      var a = 0.11 * gi * g.giWarm;
-      gr.addColorStop(0, 'rgba(255,214,150,' + a + ')');
-      gr.addColorStop(1, 'rgba(255,214,150,0)');
-      ctx.fillStyle = gr;
-      ctx.fillRect(p[0] - 175, p[1] - 175, 350, 350);
+    // Warm lamp pools from the GI strings — one pre-composited blit.
+    if (g.giLayer) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = Math.min(1, 0.20 * gi * g.giWarm);
+      ctx.drawImage(g.giLayer, 0, 0, T.W, T.H);
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   /* -------------------------------------------------------------- inserts */
@@ -201,28 +201,37 @@
       if (lv <= 0.01) continue;
       var rgb = U.hexToRgb(s.c);
 
+      // cached gradients — these are static per insert; only alpha varies
+      if (!s._glow) {
+        var rad0 = (Math.max(s.w || 16, s.h || 16)) * 1.9;
+        s._rad = rad0;
+        var gg = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, rad0);
+        gg.addColorStop(0, 'rgba(' + rgb.join(',') + ',0.55)');
+        gg.addColorStop(0.45, 'rgba(' + rgb.join(',') + ',0.17)');
+        gg.addColorStop(1, 'rgba(' + rgb.join(',') + ',0)');
+        s._glow = gg;
+        var lg0 = ctx.createLinearGradient(s.x, s.y - (s.h || s.w) * 0.6, s.x, s.y + (s.h || s.w) * 0.6);
+        lg0.addColorStop(0, 'rgba(255,255,255,0.92)');
+        lg0.addColorStop(0.35, 'rgba(' + rgb.map(function (v) { return Math.min(255, v + 70); }).join(',') + ',0.96)');
+        lg0.addColorStop(1, 'rgba(' + rgb.join(',') + ',0.86)');
+        s._lens = lg0;
+      }
+
       // under-lens glow spilling onto the playfield
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      var rad = (Math.max(s.w || 16, s.h || 16)) * 1.9;
-      var gr = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, rad);
-      gr.addColorStop(0, 'rgba(' + rgb.join(',') + ',' + (0.55 * lv) + ')');
-      gr.addColorStop(0.45, 'rgba(' + rgb.join(',') + ',' + (0.17 * lv) + ')');
-      gr.addColorStop(1, 'rgba(' + rgb.join(',') + ',0)');
-      ctx.fillStyle = gr;
-      ctx.fillRect(s.x - rad, s.y - rad, rad * 2, rad * 2);
+      ctx.globalAlpha = lv;
+      ctx.fillStyle = s._glow;
+      ctx.fillRect(s.x - s._rad, s.y - s._rad, s._rad * 2, s._rad * 2);
       ctx.restore();
 
       // the lens itself
       ctx.save();
+      ctx.globalAlpha = lv;
       Art.insertPath(ctx, s, 1);
-      var lg = ctx.createLinearGradient(s.x, s.y - (s.h || s.w) * 0.6, s.x, s.y + (s.h || s.w) * 0.6);
-      lg.addColorStop(0, 'rgba(255,255,255,' + (0.92 * lv) + ')');
-      lg.addColorStop(0.35, 'rgba(' + rgb.map(function (v) { return Math.min(255, v + 70); }).join(',') + ',' + (0.96 * lv) + ')');
-      lg.addColorStop(1, 'rgba(' + rgb.join(',') + ',' + (0.86 * lv) + ')');
-      ctx.fillStyle = lg;
+      ctx.fillStyle = s._lens;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 * lv) + ')';
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.restore();
@@ -230,9 +239,8 @@
       // silk-screen label re-drawn dark on top of the lit lens
       if (s.txt) {
         ctx.save();
-        ctx.fillStyle = 'rgba(8,12,20,' + (0.62 * lv) + ')';
-        var fs = Math.max(4.2, Math.min((s.h || s.w) * 0.55, s.w * 0.34));
-        ctx.font = '800 ' + fs + 'px Inter, "Segoe UI", sans-serif';
+        ctx.fillStyle = 'rgba(8,12,20,' + (0.66 * lv) + ')';
+        Art.labelFont(ctx, s.txt, s, 1);
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(s.txt, s.x, s.y + (s.shape === 'arrow' ? 8 : 0.4));
         ctx.restore();
@@ -249,14 +257,19 @@
       var f = Art.FLASHERS[i];
       var lv = g.flashers[f.id] || 0;
       if (lv <= 0.005) continue;
-      var rgb = U.hexToRgb(f.c);
-      var gr = ctx.createRadialGradient(f.x, f.y, 2, f.x, f.y, f.r);
-      gr.addColorStop(0, 'rgba(255,255,255,' + (0.72 * lv) + ')');
-      gr.addColorStop(0.22, 'rgba(' + rgb.join(',') + ',' + (0.46 * lv) + ')');
-      gr.addColorStop(1, 'rgba(' + rgb.join(',') + ',0)');
-      ctx.fillStyle = gr;
+      if (!f._g) {
+        var rgb = U.hexToRgb(f.c);
+        var gr = ctx.createRadialGradient(f.x, f.y, 2, f.x, f.y, f.r);
+        gr.addColorStop(0, 'rgba(255,255,255,0.72)');
+        gr.addColorStop(0.22, 'rgba(' + rgb.join(',') + ',0.46)');
+        gr.addColorStop(1, 'rgba(' + rgb.join(',') + ',0)');
+        f._g = gr;
+      }
+      ctx.globalAlpha = Math.min(1, lv);
+      ctx.fillStyle = f._g;
       ctx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
     }
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
@@ -641,18 +654,18 @@
       var glowA = Math.max(lit * 0.5, ramp.flash);
       var rgb = U.hexToRgb(ramp.color);
 
-      /* --- shadow cast on the playfield --- */
+      /* --- soft shadow cast on the playfield --- */
       ctx.save();
-      ctx.globalAlpha = 0.32;
+      ctx.globalAlpha = 0.20;
       ctx.strokeStyle = '#000';
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       ctx.beginPath();
       for (var s = 0; s < pts.length; s++) {
         var p = pts[s];
-        var ox = p.x + p.z * 0.10, oy = p.y + p.z * 0.15;
+        var ox = p.x + p.z * 0.11, oy = p.y + p.z * 0.19;
         if (s === 0) ctx.moveTo(ox, oy); else ctx.lineTo(ox, oy);
       }
-      ctx.lineWidth = path.width * 0.85;
+      ctx.lineWidth = (s > pts.length * path.wireFrom ? 26 : path.width) * 0.7;
       ctx.stroke();
       ctx.restore();
 
@@ -673,16 +686,16 @@
       }
       ctx.closePath();
       var fg = ctx.createLinearGradient(pts[0].x, pts[0].y, pts[wireStart].x, pts[wireStart].y);
-      fg.addColorStop(0, 'rgba(' + rgb.join(',') + ',0.20)');
-      fg.addColorStop(0.5, 'rgba(230,248,255,0.15)');
-      fg.addColorStop(1, 'rgba(' + rgb.join(',') + ',0.22)');
+      fg.addColorStop(0, 'rgba(' + rgb.join(',') + ',0.10)');
+      fg.addColorStop(0.5, 'rgba(225,245,255,0.055)');
+      fg.addColorStop(1, 'rgba(' + rgb.join(',') + ',0.10)');
       ctx.fillStyle = fg;
       ctx.fill();
       // glow when lit
       if (glowA > 0.02) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = 'rgba(' + rgb.join(',') + ',' + (0.28 * glowA) + ')';
+        ctx.fillStyle = 'rgba(' + rgb.join(',') + ',' + (0.22 * glowA) + ')';
         ctx.fill();
         ctx.restore();
       }
@@ -695,9 +708,9 @@
           var X = proj(pc.x + nn.x * half * sg), Y = projY(pc.y + nn.y * half * sg, pc.z);
           if (c === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
         }
-        ctx.lineWidth = 3.2; ctx.strokeStyle = 'rgba(10,18,30,0.55)'; ctx.stroke();
-        ctx.lineWidth = 1.7;
-        ctx.strokeStyle = 'rgba(' + rgb.map(function (v) { return Math.min(255, v + 40); }).join(',') + ',0.9)';
+        ctx.lineWidth = 2.4; ctx.strokeStyle = 'rgba(10,18,30,0.42)'; ctx.stroke();
+        ctx.lineWidth = 1.25;
+        ctx.strokeStyle = 'rgba(' + rgb.map(function (v) { return Math.min(255, v + 40); }).join(',') + ',0.78)';
         ctx.stroke();
       });
 
@@ -709,9 +722,9 @@
       ctx.lineWidth = 5; ctx.strokeStyle = '#93a7bd'; ctx.stroke();
       ctx.lineWidth = 2; ctx.strokeStyle = '#eaf4ff'; ctx.stroke();
 
-      /* --- wireform habitrail --- */
+      /* --- wireform habitrail: two slim steel wires, sparse rungs --- */
       ctx.lineCap = 'round';
-      var wireHalf = P.BALL_R + 2.5;
+      var wireHalf = P.BALL_R + 1.5;
       [1, -1].forEach(function (sg) {
         ctx.beginPath();
         for (var c = wireStart; c < pts.length; c++) {
@@ -719,14 +732,14 @@
           var X = proj(pc.x + nn.x * wireHalf * sg), Y = projY(pc.y + nn.y * wireHalf * sg, pc.z);
           if (c === wireStart) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
         }
-        ctx.lineWidth = 3.4; ctx.strokeStyle = 'rgba(8,14,24,0.6)'; ctx.stroke();
-        ctx.lineWidth = 2.1; ctx.strokeStyle = '#aebfd3'; ctx.stroke();
-        ctx.lineWidth = 0.8; ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.stroke();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(8,14,24,0.42)'; ctx.stroke();
+        ctx.lineWidth = 1.45; ctx.strokeStyle = 'rgba(176,193,213,0.92)'; ctx.stroke();
+        ctx.lineWidth = 0.55; ctx.strokeStyle = 'rgba(255,255,255,0.66)'; ctx.stroke();
       });
       // rungs
-      ctx.lineWidth = 1.3;
-      ctx.strokeStyle = 'rgba(170,190,212,0.75)';
-      for (var w = wireStart; w < pts.length; w += 5) {
+      ctx.lineWidth = 0.85;
+      ctx.strokeStyle = 'rgba(170,190,212,0.40)';
+      for (var w = wireStart; w < pts.length; w += 11) {
         var pw = pts[w], nw = pathNormal(pts, w);
         ctx.beginPath();
         ctx.moveTo(proj(pw.x + nw.x * wireHalf), projY(pw.y + nw.y * wireHalf, pw.z));
@@ -734,9 +747,9 @@
         ctx.stroke();
       }
       // support posts every so often
-      ctx.strokeStyle = 'rgba(120,140,165,0.55)';
-      ctx.lineWidth = 2;
-      for (var q = 4; q < pts.length; q += 22) {
+      ctx.strokeStyle = 'rgba(120,140,165,0.34)';
+      ctx.lineWidth = 1.5;
+      for (var q = 8; q < pts.length; q += 36) {
         var pq = pts[q];
         ctx.beginPath();
         ctx.moveTo(pq.x, projY(pq.y, pq.z));
@@ -945,10 +958,10 @@
     ctx.fillStyle = gr;
     ctx.fillRect(pf.x, pf.y, pf.w, pf.h);
     // vignette
-    var v = ctx.createRadialGradient(pf.x + pf.w / 2, pf.y + pf.h * 0.45, pf.w * 0.30,
-      pf.x + pf.w / 2, pf.y + pf.h * 0.5, pf.h * 0.72);
+    var v = ctx.createRadialGradient(pf.x + pf.w / 2, pf.y + pf.h * 0.45, pf.w * 0.42,
+      pf.x + pf.w / 2, pf.y + pf.h * 0.5, pf.h * 0.78);
     v.addColorStop(0, 'rgba(0,0,0,0)');
-    v.addColorStop(1, 'rgba(0,0,0,0.42)');
+    v.addColorStop(1, 'rgba(0,0,0,0.26)');
     ctx.fillStyle = v;
     ctx.fillRect(pf.x, pf.y, pf.w, pf.h);
     ctx.restore();
@@ -986,93 +999,97 @@
     ctx.restore();
   }
 
-  function heading(ctx, txt, x, y, w, color) {
+  function heading(ctx, txt, x, y, size, color) {
     ctx.save();
-    ctx.font = '800 ' + Math.max(9, w * 0.052) + 'px Inter, "Segoe UI", sans-serif';
+    ctx.font = '800 ' + size + 'px Inter, "Segoe UI", sans-serif';
     ctx.fillStyle = color || 'rgba(255,200,110,0.92)';
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.letterSpacing = '2px';
     ctx.fillText(txt, x, y);
     ctx.letterSpacing = '0px';
     ctx.restore();
+    return y + size + 8;
   }
 
   /* --------------------------------------------------------- left: translite */
   function drawLeftPanel(ctx, L, g) {
     var p = L.left;
-    var artH = Math.min(p.h * 0.46, p.w * 1.12);
+    var artH = Math.round(Math.min(p.h * 0.42, p.w * 1.06));
     drawTranslite(ctx, p.x, p.y, p.w, artH, g);
 
-    var y = p.y + artH + 14;
-    var h = p.h - artH - 14;
+    var y = p.y + artH + 12;
+    var h = p.h - artH - 12;
     panelBg(ctx, p.x, y, p.w, h);
 
-    var pad = Math.max(10, p.w * 0.06);
+    var pad = 15;
     var cx = p.x + pad, cw = p.w - pad * 2;
+    var fs = U.clamp(cw * 0.052, 9, 12.5);
     var cy = y + pad;
 
-    heading(ctx, 'PLAYERS', cx, cy, cw);
-    cy += Math.max(16, cw * 0.075);
+    // ---- how much room is left after the fixed blocks at the bottom? ----
+    var hintH = fs * 3.6 + 10;
+    var machH = fs * 3.9 + 22;
+    var avail = h - pad * 2 - hintH - machH;
 
-    var n = Math.max(1, g.players.length);
+    cy = heading(ctx, 'PLAYERS', cx, cy, fs);
+
+    var n = U.clamp(g.players.length, 1, 4);
+    var rowH = U.clamp((avail - fs) / n - 6, 26, 54);
     for (var i = 0; i < n; i++) {
       var pl = g.players[i];
       var active = (g.state === 'play' || g.state === 'bonus') && i === g.current;
-      var rowH = Math.max(30, cw * 0.155);
       ctx.save();
-      ctx.fillStyle = active ? 'rgba(90,175,255,0.16)' : 'rgba(255,255,255,0.03)';
+      ctx.fillStyle = active ? 'rgba(90,175,255,0.17)' : 'rgba(255,255,255,0.035)';
       U.roundRect(ctx, cx, cy, cw, rowH, 6); ctx.fill();
       if (active) {
-        ctx.strokeStyle = 'rgba(120,205,255,0.6)'; ctx.lineWidth = 1.4;
+        ctx.strokeStyle = 'rgba(120,205,255,0.65)'; ctx.lineWidth = 1.4;
         U.roundRect(ctx, cx, cy, cw, rowH, 6); ctx.stroke();
       }
-      ctx.font = '700 ' + Math.max(9, cw * 0.058) + 'px Inter,sans-serif';
-      ctx.fillStyle = active ? '#bfe4ff' : '#728aa6';
+      ctx.font = '700 ' + (fs * 0.88) + 'px Inter,sans-serif';
+      ctx.fillStyle = active ? '#bfe4ff' : '#6f88a5';
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText('PLAYER ' + (i + 1), cx + 8, cy + rowH * 0.34);
-      ctx.font = '800 ' + Math.max(13, cw * 0.105) + 'px "Segoe UI", Inter, sans-serif';
-      ctx.fillStyle = active ? '#ffffff' : '#93a9c2';
+      ctx.fillText('PLAYER ' + (i + 1) + (pl && pl.extraBalls ? '   EB x' + pl.extraBalls : ''),
+        cx + 9, cy + rowH * 0.30);
+      ctx.font = '800 ' + U.clamp(rowH * 0.44, 13, 24) + 'px "Segoe UI", Inter, sans-serif';
+      ctx.fillStyle = active ? '#ffffff' : '#8fa6c0';
       ctx.textAlign = 'right';
-      ctx.fillText(U.commas(pl ? pl.score : 0), cx + cw - 8, cy + rowH * 0.62);
-      if (pl && pl.extraBalls > 0) {
-        ctx.font = '700 ' + Math.max(8, cw * 0.05) + 'px Inter,sans-serif';
-        ctx.fillStyle = '#ff8a7a';
-        ctx.textAlign = 'left';
-        ctx.fillText('EB x' + pl.extraBalls, cx + 8, cy + rowH * 0.74);
-      }
+      ctx.fillText(U.commas(pl ? pl.score : 0), cx + cw - 9, cy + rowH * 0.68);
       ctx.restore();
       cy += rowH + 6;
     }
 
-    cy += 6;
-    heading(ctx, 'MACHINE', cx, cy, cw);
-    cy += Math.max(16, cw * 0.075);
+    // ---- machine block, anchored above the hints ----
+    var my = y + h - pad - hintH - machH;
+    my = heading(ctx, 'MACHINE', cx, my, fs);
     var rows = [
-      ['BALL', g.state === 'attract' ? '-' : (g.ballNum + ' OF ' + g.ballsPerGame)],
+      ['BALL', (g.state === 'play' || g.state === 'bonus')
+        ? (Math.min(g.ballNum, g.ballsPerGame) + ' OF ' + g.ballsPerGame) : '-'],
       ['CREDITS', String(g.credits)],
-      ['HIGH SCORE', U.shortScore(g.hs.list[0] ? g.hs.list[0].score : 0)]
+      ['GRAND CHAMP', U.shortScore(g.hs.list[0] ? g.hs.list[0].score : 0)]
     ];
     ctx.save();
     ctx.textBaseline = 'middle';
     for (var r = 0; r < rows.length; r++) {
-      ctx.font = '600 ' + Math.max(9, cw * 0.055) + 'px Inter,sans-serif';
+      ctx.font = '600 ' + (fs * 0.92) + 'px Inter,sans-serif';
       ctx.fillStyle = '#6d84a0'; ctx.textAlign = 'left';
-      ctx.fillText(rows[r][0], cx, cy + 8);
-      ctx.font = '800 ' + Math.max(10, cw * 0.065) + 'px Inter,sans-serif';
+      ctx.fillText(rows[r][0], cx, my + fs * 0.6);
+      ctx.font = '800 ' + (fs * 1.05) + 'px Inter,sans-serif';
       ctx.fillStyle = '#d5e6fb'; ctx.textAlign = 'right';
-      ctx.fillText(rows[r][1], cx + cw, cy + 8);
-      cy += Math.max(18, cw * 0.085);
+      ctx.fillText(rows[r][1], cx + cw, my + fs * 0.6);
+      my += fs * 1.3;
     }
     ctx.restore();
 
-    // controls hint at the bottom
-    var hintY = y + h - Math.max(46, cw * 0.24);
+    // ---- controls hint pinned to the bottom ----
+    var hintY = y + h - pad - hintH + 4;
     ctx.save();
-    ctx.font = '600 ' + Math.max(8.5, cw * 0.048) + 'px Inter,sans-serif';
-    ctx.fillStyle = 'rgba(120,150,185,0.85)';
+    ctx.font = '600 ' + (fs * 0.86) + 'px Inter,sans-serif';
+    ctx.fillStyle = 'rgba(118,150,188,0.9)';
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    var hints = ['SHIFT / ARROWS  flippers', 'SPACE  plunger    Z X C  nudge', 'ENTER  start      F1  help'];
-    for (var q = 0; q < hints.length; q++) ctx.fillText(hints[q], cx, hintY + q * Math.max(12, cw * 0.062));
+    var hints = ['SHIFT / ← →   flippers',
+      'SPACE  plunger     Z X C  nudge',
+      'ENTER  start   F1 help   [ ] speed ' + Math.round(g.speed * 100) + '%'];
+    for (var q = 0; q < hints.length; q++) ctx.fillText(hints[q], cx, hintY + q * fs * 1.2);
     ctx.restore();
   }
 
@@ -1193,81 +1210,90 @@
   /* ------------------------------------------------------- right: status */
   function drawRightPanel(ctx, L, g) {
     var p = L.right;
-    var y = L.dmd.y + L.dmd.h + Math.max(18, L.dmd.h * 0.22);
+    var y = Math.round(L.dmd.y + L.dmd.h + L.dmd.h * 0.26 + 10);
     var h = p.y + p.h - y;
     panelBg(ctx, p.x, y, p.w, h);
 
-    var pad = Math.max(10, p.w * 0.06);
+    var pad = 15;
     var cx = p.x + pad, cw = p.w - pad * 2;
+    var fs = U.clamp(cw * 0.052, 9, 12.5);
     var cy = y + pad;
-
-    heading(ctx, 'SAGA STATUS', cx, cy, cw);
-    cy += Math.max(18, cw * 0.08);
 
     var pl = g.players[g.current] || g.blankPlayer();
     var modeNames = PB.Rules.MODE_NAMES;
-    var cols = 2, cellW = (cw - 6) / cols, cellH = Math.max(20, cw * 0.088);
+
+    // budget: sagas grid, four meters, then the champion list at the foot
+    var hsRows = Math.min(4, g.hs.list.length);
+    var hsH = fs + 8 + hsRows * fs * 1.4 + 6;
+    var meterH = fs * 2.35;
+    var meters = 4;
+    var gridTop = cy + fs + 8;
+    var gridSpace = (y + h - pad - hsH) - gridTop - meters * meterH - 10;
+    var cellH = U.clamp(gridSpace / 3 - 5, 18, 40);
+
+    heading(ctx, 'SAGA STATUS', cx, cy, fs);
+
+    var cols = 2, cellW = (cw - 6) / cols;
     for (var i = 0; i < 6; i++) {
       var col = i % cols, row = (i / cols) | 0;
-      var bx = cx + col * (cellW + 6), by = cy + row * (cellH + 5);
+      var bx = cx + col * (cellW + 6), by = gridTop + row * (cellH + 5);
       var done = pl.modesDone[i];
       var running = pl.modeActive === i;
       ctx.save();
-      ctx.fillStyle = running ? 'rgba(255,190,80,0.28)' : done ? 'rgba(90,240,170,0.18)' : 'rgba(255,255,255,0.045)';
+      ctx.fillStyle = running ? 'rgba(255,190,80,0.30)' : done ? 'rgba(90,240,170,0.18)' : 'rgba(255,255,255,0.045)';
       U.roundRect(ctx, bx, by, cellW, cellH, 4); ctx.fill();
-      ctx.strokeStyle = running ? 'rgba(255,210,120,0.9)' : done ? 'rgba(110,255,190,0.55)' : 'rgba(255,255,255,0.10)';
+      ctx.strokeStyle = running ? 'rgba(255,210,120,0.95)' : done ? 'rgba(110,255,190,0.55)' : 'rgba(255,255,255,0.10)';
       ctx.lineWidth = 1.1;
       U.roundRect(ctx, bx, by, cellW, cellH, 4); ctx.stroke();
-      ctx.font = '800 ' + Math.max(7.5, cellW * 0.115) + 'px Inter,sans-serif';
+      ctx.font = '800 ' + U.clamp(cellH * 0.42, 8, 13) + 'px Inter,sans-serif';
       ctx.fillStyle = running ? '#fff0cf' : done ? '#c8ffe6' : '#6f88a5';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(modeNames[i], bx + cellW / 2, by + cellH / 2);
+      ctx.fillText(modeNames[i], bx + cellW / 2, by + cellH / 2 + 0.5);
       ctx.restore();
     }
-    cy += 3 * (cellH + 5) + 8;
+    cy = gridTop + 3 * (cellH + 5) + 6;
 
-    // meters
     function meter(label, value, frac, color) {
       ctx.save();
-      ctx.font = '600 ' + Math.max(8.5, cw * 0.052) + 'px Inter,sans-serif';
+      ctx.font = '600 ' + (fs * 0.9) + 'px Inter,sans-serif';
       ctx.fillStyle = '#6d84a0'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-      ctx.fillText(label, cx, cy + 9);
-      ctx.font = '800 ' + Math.max(9.5, cw * 0.062) + 'px Inter,sans-serif';
+      ctx.fillText(label, cx, cy + fs);
+      ctx.font = '800 ' + (fs * 1.05) + 'px Inter,sans-serif';
       ctx.fillStyle = color; ctx.textAlign = 'right';
-      ctx.fillText(value, cx + cw, cy + 9);
+      ctx.fillText(value, cx + cw, cy + fs);
       if (frac !== null) {
         ctx.fillStyle = 'rgba(255,255,255,0.07)';
-        U.roundRect(ctx, cx, cy + 13, cw, 4, 2); ctx.fill();
+        U.roundRect(ctx, cx, cy + fs + 4, cw, 4, 2); ctx.fill();
         ctx.fillStyle = color;
-        U.roundRect(ctx, cx, cy + 13, cw * U.clamp(frac, 0, 1), 4, 2); ctx.fill();
+        U.roundRect(ctx, cx, cy + fs + 4, cw * U.clamp(frac, 0, 1), 4, 2); ctx.fill();
       }
       ctx.restore();
-      cy += Math.max(24, cw * 0.115);
+      cy += meterH;
     }
 
+    function bits(m) { var n = 0; while (m) { n += m & 1; m >>= 1; } return n; }
     meter('BONUS X', pl.bonusX + 'X', pl.bonusX / 10, '#7dffbc');
-    meter('LOCKS', pl.locks + ' / 3', pl.locks / 3, '#8fd8ff');
-    meter('T-H-O-R', pl.thorMask.toString(2).split('1').length - 1 + ' / 4',
-      (pl.thorMask.toString(2).split('1').length - 1) / 4, '#ffb066');
+    meter('BALLS LOCKED', pl.locks + ' / 3', pl.locks / 3, '#8fd8ff');
+    meter('T-H-O-R', bits(pl.thorMask) + ' / 4', bits(pl.thorMask) / 4, '#ffb066');
     if (g.rules.mbActive) meter('JACKPOT', U.shortScore(g.rules.jackpotValue), null, '#ffd166');
+    else if (g.rules.wizard) meter('RAGNAROK', Math.ceil(g.rules.wizardTimer) + 's', null, '#ff6f6f');
     else meter('BONUS', U.shortScore(g.rules.bonusValue(pl)), null, '#ffd166');
 
-    // high scores at the bottom
-    var hsY = y + h - Math.max(112, cw * 0.62);
-    heading(ctx, 'GRAND CHAMPION', cx, hsY, cw, 'rgba(120,215,255,0.9)');
-    hsY += Math.max(17, cw * 0.075);
+    // champions at the foot
+    var hsY = y + h - pad - hsH + fs;
+    hsY = heading(ctx, 'HIGHEST SCORES', cx, hsY, fs, 'rgba(120,215,255,0.9)');
     ctx.save();
     ctx.textBaseline = 'middle';
-    for (var s = 0; s < Math.min(4, g.hs.list.length); s++) {
+    for (var s = 0; s < hsRows; s++) {
       var e = g.hs.list[s];
-      ctx.font = '800 ' + Math.max(9, cw * 0.058) + 'px ui-monospace,Consolas,monospace';
+      ctx.font = '800 ' + (fs * 0.95) + 'px ui-monospace,Consolas,monospace';
       ctx.fillStyle = s === 0 ? '#ffd166' : '#8ea6c2';
       ctx.textAlign = 'left';
-      ctx.fillText((s + 1) + '. ' + e.initials, cx, hsY + 7);
+      ctx.fillText((s + 1) + '. ' + e.initials, cx, hsY + fs * 0.6);
       ctx.textAlign = 'right';
       ctx.fillStyle = s === 0 ? '#fff0cf' : '#c2d5ea';
-      ctx.fillText(U.commas(e.score), cx + cw, hsY + 7);
-      hsY += Math.max(16, cw * 0.072);
+      ctx.fillText(U.commas(e.score), cx + cw, hsY + fs * 0.6);
+      hsY += fs * 1.4;
     }
     ctx.restore();
   }

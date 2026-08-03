@@ -126,8 +126,14 @@
     var sd = (b.x - this.x1) * this.nx + (b.y - this.y1) * this.ny;
 
     if (this.side > 0) {
-      // One-sided: also catch a ball that has slipped behind the wall.
-      if (sd < 0 && t > 0 && t < 1) return { nx: this.nx, ny: this.ny, pen: r - sd };
+      // One-sided: recover a ball that has slipped *just* behind the wall.
+      // The depth limit matters — without it a ball legitimately living on the
+      // far side of an interior guide gets flung across the playfield.
+      var recover = this.recover === undefined ? r * 2.6 : this.recover;
+      if (sd < 0) {
+        if (sd < -recover) return null;
+        if (t > 0 && t < 1) return { nx: this.nx, ny: this.ny, pen: r - sd };
+      }
       if (d2 >= r * r) return null;
       var d = Math.sqrt(d2) || 1e-6;
       if ((ox * this.nx + oy * this.ny) < 0) return { nx: this.nx, ny: this.ny, pen: r - sd };
@@ -267,10 +273,11 @@
     this.name = cfg.name || 'flipper';
     this.mat = P.MAT.flipper;
     this.enabled = cfg.enabled !== false;
-    this.accelUp = cfg.accelUp || 2350;      // rad/s^2
-    this.omegaUp = cfg.omegaUp || 39;        // rad/s cap
-    this.accelDn = cfg.accelDn || 980;
-    this.omegaDn = cfg.omegaDn || 17;
+    // ~27 ms full stroke: coil ramps up, then holds at the angular-speed cap
+    this.accelUp = cfg.accelUp || 3000;      // rad/s^2
+    this.omegaUp = cfg.omegaUp || 47;        // rad/s cap (tip ~3.0 m/s)
+    this.accelDn = cfg.accelDn || 1050;
+    this.omegaDn = cfg.omegaDn || 18;
     this.hitT = 0;                           // visual recoil timer
     this.atEnd = false;
   };
@@ -603,7 +610,9 @@
   P.World.prototype.advance = function (dt, maxSteps) {
     this._acc = (this._acc || 0) + dt;
     var n = 0;
-    maxSteps = maxSteps || 40;
+    // Headroom for a 20 Hz frame at full speed (~50 ms = 48 substeps); the cap
+    // only bites during a genuine stall, where dropping time is what we want.
+    maxSteps = maxSteps || 56;
     while (this._acc >= P.DT && n < maxSteps) {
       this.step(P.DT);
       this._acc -= P.DT;

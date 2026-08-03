@@ -28,23 +28,26 @@
   var K = T.K = {
     archCX: 264, archCY: 320, archR: 250, guideR: 210,
     archA0: -190 * U.DEG, archA1: 10 * U.DEG,
-    leftLane: [[57, 357], [55, 430], [52, 500], [50, 585]],
-    rightLane: [[471, 357], [458, 420], [452, 500], [450, 585]],
+    leftLane: [[57, 357], [60, 430], [61, 500], [62, 560], [62, 620]],
+    rightLane: [[471, 357], [452, 410], [442, 470], [440, 540], [440, 620]],
+    // tangent arcs that turn a 55-deg flipper shot into a vertical orbit lane
+    curlL: { cx: 234, cy: 620, rOut: 220, rIn: 172, a0: 145, a1: 180 },
+    curlR: { cx: 266, cy: 620, rOut: 220, rIn: 172, a0: 0, a1: 35 },
     shooterX0: 486, shooterX1: 514, shooterTop: 405,
-    flipL: { x: 167, y: 1050 }, flipR: { x: 333, y: 1050 }, flipU: { x: 466, y: 672 },
+    flipL: { x: 167, y: 1050 }, flipR: { x: 333, y: 1050 }, flipU: { x: 398, y: 576 },
     scoop: { x: 264, y: 420, r: 19 },
-    drops: [{ x: 220, y: 530 }, { x: 264, y: 530 }, { x: 308, y: 530 }],
+    drops: [{ x: 220, y: 556 }, { x: 264, y: 556 }, { x: 308, y: 556 }],
     bumpers: [{ x: 186, y: 300 }, { x: 264, y: 252 }, { x: 342, y: 300 }],
     topLanes: [186, 238, 290, 342], topLaneY: 182,
     rampL: { x: 178, y: 640 }, rampR: { x: 348, y: 640 },
-    standL: [{ x: 86, y: 470 }, { x: 86, y: 522 }],
-    standR: [{ x: 424, y: 470 }, { x: 424, y: 522 }],
-    spinner: { x: 32, y: 470 },
+    standL: [{ x: 72, y: 470 }, { x: 72, y: 522 }],
+    standR: [{ x: 430, y: 470 }, { x: 430, y: 522 }],
+    spinner: { x: 36, y: 470 },
     plunger: { x: 500, y: 1136 },
     drainY: 1168,
-    kickback: { x: 48, y: 985 },
-    inlaneL: { x: 84, y: 950 }, inlaneR: { x: 416, y: 950 },
-    outlaneL: { x: 46, y: 930 }, outlaneR: { x: 454, y: 930 }
+    kickback: { x: 69, y: 986 },
+    inlaneL: { x: 105, y: 940 }, inlaneR: { x: 395, y: 940 },
+    outlaneL: { x: 73, y: 928 }, outlaneR: { x: 427, y: 928 }
   };
 
   /* ======================================================== MECHANISM TYPES */
@@ -207,17 +210,23 @@
     /* ------------------------------------------------- outer boundary --- */
     // Top arch (the ball guide the orbit rides against)
     arc(K.archCX, K.archCY, K.archR, Math.PI, Math.PI * 2, M.guide, { tag: 'arch', side: -1 });
-    // left rail
-    poly([[14, 320], [14, 762], [30, 852], [30, 1046]], M.guide, { side: 1 });
+    // Left rail, straight down to where the orbit curl takes over.
+    wall(14, 320, 14, 620, M.guide, { side: 1 });
+    // The curl: a true arc, tangent to vertical at the top and to a ~55 deg
+    // flipper shot at the bottom. A polyline here made the ball rattle and lose
+    // its whole shot; on an arc it rolls through and keeps its speed.
+    arc(K.curlL.cx, K.curlL.cy, K.curlL.rOut, K.curlL.a0 * U.DEG, K.curlL.a1 * U.DEG, M.guide, { tag: 'curlL' });
+    poly([[54, 746], [62, 806], [56, 900], [46, 1046]], M.guide, { side: 1 });
     // bottom-left funnel down to the drain
-    poly([[30, 1046], [92, 1140], [172, 1176]], M.guide, { side: 1 });
+    poly([[46, 1046], [96, 1140], [172, 1176]], M.guide, { side: 1 });
     // right rail = outer wall of the shooter lane
     wall(514, 320, 514, 1152, M.guide, { side: 0 });
     // inner wall of the shooter lane / right playfield edge
-    wall(K.shooterX0, K.shooterTop, K.shooterX0, 1152, M.guide, { side: 0, tag: 'shooterwall' });
-    // right playfield lower boundary + funnel
-    poly([[486, 762], [470, 852], [470, 1046]], M.guide, { side: -1 });
-    poly([[470, 1046], [408, 1140], [328, 1176]], M.guide, { side: -1 });
+    wall(K.shooterX0, K.shooterTop, K.shooterX0, 620, M.guide, { side: 0, tag: 'shooterwall' });
+    wall(K.shooterX0, 620, K.shooterX0, 1152, M.guide, { side: 0, tag: 'shooterwall' });
+    arc(K.curlR.cx, K.curlR.cy, K.curlR.rOut, K.curlR.a0 * U.DEG, K.curlR.a1 * U.DEG, M.guide, { tag: 'curlR' });
+    poly([[446, 746], [438, 806], [444, 900], [454, 1046]], M.guide);
+    poly([[454, 1046], [404, 1140], [328, 1176]], M.guide);
     // shooter lane floor (the plunger sits here)
     wall(K.shooterX0, 1152, 514, 1152, M.metal);
 
@@ -229,9 +238,9 @@
     arc(K.archCX, K.archCY, K.guideR, K.archA0, K.archA1, M.guide, { tag: 'orbitguide' });
     poly(K.leftLane, M.guide);
     poly(K.rightLane, M.guide);
-    // flared lane mouths so the ball is funnelled in rather than rattling
-    wall(50, 585, 44, 640, M.guide);
-    wall(450, 585, 458, 640, M.guide);
+    // inner guides curl with the rails, keeping the lane a constant 46 mm
+    arc(K.curlL.cx, K.curlL.cy, K.curlL.rIn, K.curlL.a0 * U.DEG, K.curlL.a1 * U.DEG, M.guide, { tag: 'curlLin' });
+    arc(K.curlR.cx, K.curlR.cy, K.curlR.rIn, K.curlR.a0 * U.DEG, K.curlR.a1 * U.DEG, M.guide, { tag: 'curlRin' });
 
     /* ------------------------------------------------------- top lanes */
     var lx = [160, 212, 264, 316, 368];
@@ -255,11 +264,12 @@
     /* ---------------------------------------------------- Well of Urd */
     var sc = new Scoop(K.scoop.x, K.scoop.y, K.scoop.r);
     t.scoop = sc;
-    // hood: blocks balls arriving from above
-    arc(sc.x, sc.y, 29, Math.PI, Math.PI * 2, M.plastic, { tag: 'scoophood', side: 1 });
-    // funnel cheeks
-    wall(232, 470, 243, 434, M.plastic);
-    wall(296, 470, 285, 434, M.plastic);
+    // funnel cheeks steer a shot up the middle into the mouth
+    wall(236, 462, 246, 434, M.plastic);
+    wall(292, 462, 282, 434, M.plastic);
+    // capture trigger sits at the mouth, below the painted hole
+    sc.capX = 264; sc.capY = 434;
+    zone(264, 434, 30, 26, 'scoopcap');
 
     /* --------------------------------------------------- drop targets */
     var bank = [];
@@ -299,28 +309,31 @@
     standup(K.standL[1].x, K.standL[1].y, 0.94, 0.34, 1, THOR[1]);
     standup(K.standR[0].x, K.standR[0].y, -0.94, 0.34, 2, THOR[2]);
     standup(K.standR[1].x, K.standR[1].y, -0.94, 0.34, 3, THOR[3]);
-    // little metal brackets behind each target so balls don't sit on them
-    wall(72, 452, 72, 542, M.guide, { side: 1 });
-    wall(438, 542, 438, 452, M.guide, { side: 1 });
+    // shoulder plastics: seal the pocket above each bank so a ball can't
+    // balance on the corner of a target
+    wall(58, 434, 84, 452, M.plastic);
+    wall(444, 434, 418, 452, M.plastic);
 
     /* --------------------------------------------------------- spinner */
-    t.spinner = new Spinner(K.spinner.x, K.spinner.y, 34);
-    zone(K.spinner.x, K.spinner.y, 40, 12, 'spinner', {});
+    t.spinner = new Spinner(K.spinner.x, K.spinner.y, 40);
+    zone(K.spinner.x, K.spinner.y, 44, 12, 'spinner', {});
 
     /* ------------------------------------------------- ramp structures */
+    // Bifrost: a low, forgiving ramp that turns over the middle and drops into
+    // the right inlane.  Valhalla is higher and tighter, crossing above it.
     var leftCtl = [
-      { x: 178, y: 660, z: 0 }, { x: 176, y: 604, z: 8 }, { x: 180, y: 548, z: 22 },
-      { x: 196, y: 494, z: 38 }, { x: 228, y: 454, z: 52 }, { x: 272, y: 436, z: 62 },
-      { x: 322, y: 448, z: 64 }, { x: 362, y: 486, z: 60 }, { x: 390, y: 540, z: 53 },
-      { x: 406, y: 610, z: 44 }, { x: 416, y: 688, z: 35 }, { x: 418, y: 770, z: 25 },
-      { x: 414, y: 846, z: 16 }, { x: 410, y: 900, z: 9 }, { x: 406, y: 938, z: 4 }
+      { x: 178, y: 668, z: 0 }, { x: 176, y: 624, z: 9 }, { x: 182, y: 580, z: 22 },
+      { x: 198, y: 542, z: 35 }, { x: 226, y: 514, z: 47 }, { x: 262, y: 500, z: 54 },
+      { x: 300, y: 504, z: 56 }, { x: 330, y: 524, z: 54 }, { x: 350, y: 558, z: 50 },
+      { x: 364, y: 606, z: 44 }, { x: 376, y: 670, z: 37 }, { x: 386, y: 742, z: 28 },
+      { x: 394, y: 814, z: 19 }, { x: 400, y: 874, z: 11 }, { x: 404, y: 928, z: 5 }
     ];
     var rightCtl = [
-      { x: 348, y: 660, z: 0 }, { x: 352, y: 604, z: 12 }, { x: 350, y: 546, z: 32 },
-      { x: 336, y: 492, z: 54 }, { x: 308, y: 454, z: 76 }, { x: 268, y: 432, z: 94 },
-      { x: 222, y: 440, z: 96 }, { x: 186, y: 472, z: 89 }, { x: 162, y: 520, z: 78 },
-      { x: 146, y: 584, z: 66 }, { x: 130, y: 640, z: 56 }, { x: 116, y: 712, z: 44 },
-      { x: 106, y: 790, z: 30 }, { x: 98, y: 860, z: 18 }, { x: 94, y: 920, z: 7 }
+      { x: 348, y: 668, z: 0 }, { x: 352, y: 620, z: 14 }, { x: 346, y: 570, z: 34 },
+      { x: 328, y: 524, z: 56 }, { x: 298, y: 490, z: 76 }, { x: 258, y: 468, z: 92 },
+      { x: 212, y: 466, z: 98 }, { x: 176, y: 488, z: 92 }, { x: 152, y: 524, z: 82 },
+      { x: 138, y: 572, z: 71 }, { x: 128, y: 638, z: 59 }, { x: 117, y: 714, z: 47 },
+      { x: 107, y: 790, z: 34 }, { x: 100, y: 858, z: 20 }, { x: 96, y: 920, z: 8 }
     ];
     var rampL = new Ramp('left',
       new P.RampPath('bifrost', leftCtl, { width: 36, wireFrom: 0.46, color: '#6fd8ff' }),
@@ -331,25 +344,22 @@
     t.ramps.push(rampL, rampR);
     t.rampL = rampL; t.rampR = rampR;
 
-    // entrance cheeks (steel guides that flank the ramp flap)
-    poly([[156, 712], [166, 652], [170, 636]], M.guide);
-    poly([[210, 712], [200, 652], [196, 636]], M.guide);
-    poly([[322, 712], [332, 652], [336, 636]], M.guide);
-    poly([[376, 712], [366, 652], [362, 636]], M.guide);
+    // entrance cheeks (steel guides that flank the ramp flap, flared at the foot)
+    poly([[148, 716], [156, 660], [158, 634]], M.guide);
+    poly([[208, 716], [200, 660], [198, 634]], M.guide);
+    poly([[318, 716], [326, 660], [328, 634]], M.guide);
+    poly([[378, 716], [370, 660], [368, 634]], M.guide);
     // ramp entry triggers
-    zone(K.rampL.x, 646, 32, 22, 'rampentry:left', { dirY: -1 });
-    zone(K.rampR.x, 646, 32, 22, 'rampentry:right', { dirY: -1 });
+    zone(K.rampL.x, 650, 34, 22, 'rampentry:left');
+    zone(K.rampR.x, 650, 34, 22, 'rampentry:right');
 
     /* --------------------------------------------------------- posts */
-    post(250, 470, 8);                 // centre post above the drop bank
-    post(150, 760, 8.5);
-    post(350, 760, 8.5);
-    post(112, 610, 8);
-    post(392, 610, 8);
+    post(118, 604, 8);
+    post(386, 604, 8);
 
     /* ---------------------------------------------------- slingshots */
-    var sl = new Slingshot(110, 866, 168, 956, 106, 960, 'left');
-    var sr = new Slingshot(390, 866, 332, 956, 394, 960, 'right');
+    var sl = new Slingshot(126, 866, 182, 958, 122, 962, 'left');
+    var sr = new Slingshot(374, 866, 318, 958, 378, 962, 'right');
     t.slings.push(sl, sr);
     [sl, sr].forEach(function (s, si) {
       var face = new P.Seg(s.a[0], s.a[1], s.b[0], s.b[1], M.rubber, { tag: 'sling:' + si });
@@ -364,25 +374,26 @@
     });
 
     /* ------------------------------------------- in / out lane furniture */
-    poly([[56, 838], [88, 1018]], M.guide);          // left outlane divider
-    post(92, 1024, 9);
-    poly([[94, 1032], [158, 1058]], M.guide);        // left inlane floor
-    poly([[444, 838], [412, 1018]], M.guide);        // right outlane divider
-    post(408, 1024, 9);
-    poly([[406, 1032], [342, 1058]], M.guide);       // right inlane floor
+    // The divider and the inlane floor are one continuous guide that ends
+    // flush against the flipper's base, so the ball is handed onto the bat
+    // *past* the pivot and rolls out to the tip instead of jamming behind it.
+    poly([[90, 860], [88, 996], [120, 1020], [152, 1034], [174, 1041]], M.guide);
+    post(92, 1002, 9);
+    poly([[410, 860], [412, 996], [380, 1020], [348, 1034], [326, 1041]], M.guide);
+    post(408, 1002, 9);
 
-    t.rollovers.push({ zone: zone(K.inlaneL.x, K.inlaneL.y, 34, 30, 'inlane:left'), x: K.inlaneL.x, y: K.inlaneL.y, lit: false, flash: 0, kind: 'inlane', side: 'left' });
-    t.rollovers.push({ zone: zone(K.inlaneR.x, K.inlaneR.y, 34, 30, 'inlane:right'), x: K.inlaneR.x, y: K.inlaneR.y, lit: false, flash: 0, kind: 'inlane', side: 'right' });
-    t.rollovers.push({ zone: zone(K.outlaneL.x, K.outlaneL.y, 34, 30, 'outlane:left'), x: K.outlaneL.x, y: K.outlaneL.y, lit: false, flash: 0, kind: 'outlane', side: 'left' });
-    t.rollovers.push({ zone: zone(K.outlaneR.x, K.outlaneR.y, 34, 30, 'outlane:right'), x: K.outlaneR.x, y: K.outlaneR.y, lit: false, flash: 0, kind: 'outlane', side: 'right' });
+    t.rollovers.push({ zone: zone(K.inlaneL.x, K.inlaneL.y, 32, 30, 'inlane:left'), x: K.inlaneL.x, y: K.inlaneL.y, lit: false, flash: 0, kind: 'inlane', side: 'left' });
+    t.rollovers.push({ zone: zone(K.inlaneR.x, K.inlaneR.y, 32, 30, 'inlane:right'), x: K.inlaneR.x, y: K.inlaneR.y, lit: false, flash: 0, kind: 'inlane', side: 'right' });
+    t.rollovers.push({ zone: zone(K.outlaneL.x, K.outlaneL.y, 30, 30, 'outlane:left'), x: K.outlaneL.x, y: K.outlaneL.y, lit: false, flash: 0, kind: 'outlane', side: 'left' });
+    t.rollovers.push({ zone: zone(K.outlaneR.x, K.outlaneR.y, 30, 30, 'outlane:right'), x: K.outlaneR.x, y: K.outlaneR.y, lit: false, flash: 0, kind: 'outlane', side: 'right' });
 
     /* ------------------------------------------------------- kickback */
     t.kickback = new Kickback(K.kickback.x, K.kickback.y);
-    zone(K.kickback.x, K.kickback.y, 36, 24, 'kickback', { dirY: 1 });
+    zone(K.kickback.x, K.kickback.y, 32, 24, 'kickback', { dirY: 1 });
 
     /* ----------------------------------------------- orbit / lane triggers */
-    zone(32, 620, 36, 26, 'orbit:left');
-    zone(468, 620, 36, 26, 'orbit:right');
+    zone(42, 660, 44, 26, 'orbit:left');
+    zone(458, 660, 44, 26, 'orbit:right');
     zone(K.archCX, 96, 90, 34, 'orbit:top');
     zone(500, 470, 26, 40, 'shooterlane');
     zone(250, 1174, 200, 46, 'drain');
@@ -392,7 +403,7 @@
     var fr = new P.Flipper({ x: K.flipR.x, y: K.flipR.y, rest: 152, end: 202, len: 58, r1: 11.6, r2: 7.0, side: 'right', name: 'right' });
     var fu = new P.Flipper({
       x: K.flipU.x, y: K.flipU.y, rest: 152, end: 200, len: 46, r1: 10.4, r2: 6.4,
-      side: 'right', name: 'upper', omegaUp: 36, accelUp: 2250
+      side: 'right', name: 'upper', omegaUp: 44, accelUp: 2900
     });
     world.flippers.push(fl, fr, fu);
     t.flipperL = fl; t.flipperR = fr; t.flipperU = fu;

@@ -83,7 +83,11 @@
     opt = opt || {};
     var scale = opt.scale || 1, tracking = opt.tracking || 0;
     str = String(str);
+    var maxW = opt.maxW === undefined ? W - 2 : opt.maxW;
     var w = F.width(font, str, scale, tracking);
+    // shrink to fit the 128-dot panel rather than running off the edge
+    while (scale > 1 && w > maxW) { scale--; w = F.width(font, str, scale, tracking); }
+    while (w > maxW && tracking > -1) { tracking -= 1; w = F.width(font, str, scale, tracking); }
     if (opt.align === 'center') x = Math.round(x - w / 2);
     else if (opt.align === 'right') x = Math.round(x - w);
     var cx = x;
@@ -218,15 +222,24 @@
     ctx.fillStyle = opt.bg || '#100603';
     ctx.fillRect(x, y, w, h);
 
-    // unlit dot grid (very dim, sells the "off pixel" look)
-    ctx.fillStyle = 'rgba(255,150,60,0.055)';
-    for (var gy = 0; gy < H; gy++) {
-      for (var gx = 0; gx < W; gx++) {
-        ctx.beginPath();
-        ctx.arc(offx + (gx + 0.5) * dw, offy + (gy + 0.5) * dh, r * 0.72, 0, U.TAU);
-        ctx.fill();
+    // Unlit dot grid. 4096 arcs is far too much to redraw every frame, so it
+    // is baked once per panel size and blitted.
+    var key = (w | 0) + 'x' + (h | 0);
+    if (this._gridKey !== key) {
+      this._gridKey = key;
+      var gc = U.canvas(Math.max(1, w), Math.max(1, h));
+      var g2 = gc.getContext('2d');
+      g2.fillStyle = 'rgba(255,150,60,0.055)';
+      for (var gy = 0; gy < H; gy++) {
+        for (var gx = 0; gx < W; gx++) {
+          g2.beginPath();
+          g2.arc((w - dw * W) / 2 + (gx + 0.5) * dw, (h - dh * H) / 2 + (gy + 0.5) * dh, r * 0.72, 0, U.TAU);
+          g2.fill();
+        }
       }
+      this._grid = gc;
     }
+    ctx.drawImage(this._grid, x, y);
 
     // lit dots, batched per intensity bucket
     var buckets = [];

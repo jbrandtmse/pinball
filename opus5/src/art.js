@@ -27,11 +27,11 @@
    * Positions are playfield mm.                                            */
   var INS = Art.INSERTS = [
     /* shot arrows -------------------------------------------------------- */
-    { id: 'a_lorbit', x: 32, y: 700, r: 268, shape: 'arrow', w: 22, h: 34, c: C.ice, label: '' },
-    { id: 'a_lramp', x: 178, y: 706, r: 272, shape: 'arrow', w: 24, h: 38, c: C.ice },
-    { id: 'a_scoop', x: 264, y: 486, r: 270, shape: 'arrow', w: 24, h: 36, c: C.gold },
-    { id: 'a_rramp', x: 348, y: 706, r: 268, shape: 'arrow', w: 24, h: 38, c: C.gold },
-    { id: 'a_rorbit', x: 468, y: 700, r: 272, shape: 'arrow', w: 22, h: 34, c: C.gold },
+    { id: 'a_lorbit', x: 30, y: 664, r: 268, shape: 'arrow', w: 22, h: 34, c: C.ice, label: '' },
+    { id: 'a_lramp', x: 178, y: 740, r: 272, shape: 'arrow', w: 24, h: 38, c: C.ice },
+    { id: 'a_scoop', x: 264, y: 592, r: 270, shape: 'arrow', w: 24, h: 36, c: C.gold },
+    { id: 'a_rramp', x: 348, y: 740, r: 268, shape: 'arrow', w: 24, h: 38, c: C.gold },
+    { id: 'a_rorbit', x: 470, y: 664, r: 272, shape: 'arrow', w: 22, h: 34, c: C.gold },
     { id: 'a_spin', x: 32, y: 530, r: 270, shape: 'arrow', w: 18, h: 28, c: C.green },
 
     /* R U N E top lanes -------------------------------------------------- */
@@ -46,23 +46,23 @@
     { id: 'thor2', x: 402, y: 448, shape: 'round', w: 15, c: C.ember, txt: 'O' },
     { id: 'thor3', x: 402, y: 546, shape: 'round', w: 15, c: C.ember, txt: 'R' },
 
-    /* saga mode inserts, ringed round the Well of Urd -------------------- */
-    { id: 'mode0', x: 186, y: 396, shape: 'round', w: 17, c: C.violet, txt: '1' },
-    { id: 'mode1', x: 200, y: 348, shape: 'round', w: 17, c: C.violet, txt: '2' },
-    { id: 'mode2', x: 236, y: 336, shape: 'round', w: 17, c: C.violet, txt: '3' },
-    { id: 'mode3', x: 292, y: 336, shape: 'round', w: 17, c: C.violet, txt: '4' },
-    { id: 'mode4', x: 328, y: 348, shape: 'round', w: 17, c: C.violet, txt: '5' },
-    { id: 'mode5', x: 342, y: 396, shape: 'round', w: 17, c: C.violet, txt: '6' },
+    /* saga mode inserts, in two columns flanking the Well of Urd --------- */
+    { id: 'mode0', x: 146, y: 372, shape: 'round', w: 17, c: C.violet, txt: '1' },
+    { id: 'mode1', x: 146, y: 404, shape: 'round', w: 17, c: C.violet, txt: '2' },
+    { id: 'mode2', x: 146, y: 436, shape: 'round', w: 17, c: C.violet, txt: '3' },
+    { id: 'mode3', x: 382, y: 372, shape: 'round', w: 17, c: C.violet, txt: '4' },
+    { id: 'mode4', x: 382, y: 404, shape: 'round', w: 17, c: C.violet, txt: '5' },
+    { id: 'mode5', x: 382, y: 436, shape: 'round', w: 17, c: C.violet, txt: '6' },
 
-    /* locks -------------------------------------------------------------- */
-    { id: 'lock1', x: 224, y: 470, shape: 'diamond', w: 15, c: C.ice },
-    { id: 'lock2', x: 250, y: 448, shape: 'diamond', w: 15, c: C.ice },
-    { id: 'lock3', x: 276, y: 470, shape: 'diamond', w: 15, c: C.ice },
+    /* locks, arced over the vault mouth ---------------------------------- */
+    { id: 'lock1', x: 212, y: 382, shape: 'diamond', w: 15, c: C.ice },
+    { id: 'lock2', x: 264, y: 366, shape: 'diamond', w: 15, c: C.ice },
+    { id: 'lock3', x: 316, y: 382, shape: 'diamond', w: 15, c: C.ice },
 
     /* headline inserts --------------------------------------------------- */
-    { id: 'multiball', x: 264, y: 604, shape: 'bar', w: 96, h: 20, c: C.ice, txt: 'MJOLNIR MULTIBALL' },
-    { id: 'jackpot', x: 264, y: 636, shape: 'bar', w: 74, h: 17, c: C.gold, txt: 'JACKPOT' },
-    { id: 'ragnarok', x: 264, y: 574, shape: 'bar', w: 108, h: 21, c: C.red, txt: 'RAGNAROK' },
+    { id: 'jackpot', x: 264, y: 628, shape: 'bar', w: 74, h: 17, c: C.gold, txt: 'JACKPOT' },
+    { id: 'ragnarok', x: 264, y: 654, shape: 'bar', w: 108, h: 21, c: C.red, txt: 'RAGNAROK' },
+    { id: 'multiball', x: 264, y: 682, shape: 'bar', w: 100, h: 19, c: C.ice, txt: 'MJOLNIR MULTIBALL' },
 
     /* bonus multiplier ladder -------------------------------------------- */
     { id: 'bx2', x: 128, y: 830, shape: 'oval', w: 26, h: 14, c: C.green, txt: '2X' },
@@ -71,15 +71,28 @@
     { id: 'bx10', x: 128, y: 896, shape: 'oval', w: 26, h: 14, c: C.gold, txt: '10X' },
 
     /* lower playfield ---------------------------------------------------- */
-    { id: 'kickback', x: 46, y: 1020, shape: 'oval', w: 34, h: 15, c: C.green, txt: 'KICKBACK' },
-    { id: 'special', x: 454, y: 1020, shape: 'oval', w: 34, h: 15, c: C.red, txt: 'SPECIAL' },
-    { id: 'extraball', x: 372, y: 830, shape: 'oval', w: 40, h: 16, c: C.red, txt: 'EXTRA BALL' },
+    { id: 'kickback', x: 58, y: 1000, shape: 'oval', w: 32, h: 14, c: C.green, txt: 'KICKBACK' },
+    { id: 'special', x: 442, y: 1000, shape: 'oval', w: 32, h: 14, c: C.red, txt: 'SPECIAL' },
+    { id: 'extraball', x: 356, y: 812, shape: 'oval', w: 44, h: 16, c: C.red, txt: 'EXTRA BALL' },
     { id: 'ballsave', x: 250, y: 1096, shape: 'oval', w: 52, h: 16, c: C.green, txt: 'SHOOT AGAIN' },
-    { id: 'combo', x: 372, y: 852, shape: 'oval', w: 40, h: 14, c: C.ice, txt: 'COMBO' },
-    { id: 'inl', x: 84, y: 986, shape: 'oval', w: 26, h: 12, c: C.gold },
-    { id: 'inr', x: 416, y: 986, shape: 'oval', w: 26, h: 12, c: C.gold },
-    { id: 'skill', x: 468, y: 760, shape: 'oval', w: 30, h: 14, c: C.violet, txt: 'SKILL' }
+    { id: 'combo', x: 356, y: 836, shape: 'oval', w: 44, h: 14, c: C.ice, txt: 'COMBO' },
+    { id: 'inl', x: 89, y: 988, shape: 'oval', w: 26, h: 12, c: C.gold },
+    { id: 'inr', x: 411, y: 988, shape: 'oval', w: 26, h: 12, c: C.gold },
+    { id: 'skill', x: 144, y: 812, shape: 'oval', w: 44, h: 14, c: C.violet, txt: 'SKILL' }
   ];
+
+  /** Pick the largest label size that still fits inside the lens. */
+  Art.labelFont = function (ctx, txt, s, sc) {
+    var maxW = (s.w || 16) * 0.86 * sc;
+    var maxH = (s.h || s.w || 16) * (s.shape === 'arrow' ? 0.30 : 0.60) * sc;
+    var size = Math.min(maxH, 13 * sc);
+    for (var i = 0; i < 14; i++) {
+      ctx.font = '800 ' + size + 'px Inter, "Segoe UI", sans-serif';
+      if (ctx.measureText(txt).width <= maxW || size <= 3.2 * sc) break;
+      size *= 0.90;
+    }
+    return size;
+  };
 
   Art.byId = {};
   for (var ii = 0; ii < INS.length; ii++) Art.byId[INS[ii].id] = INS[ii];
@@ -136,6 +149,28 @@
     return { w: w, h: h };
   };
 
+  /* ------------------------------------------- baked GI illumination layer */
+  Art.GI_POOLS = [[110, 250], [420, 250], [70, 620], [460, 620],
+    [130, 900], [390, 900], [264, 480], [250, 1080]];
+
+  /** All eight lamp pools composited once; the renderer blits it with alpha. */
+  Art.bakeGI = function (sc) {
+    var cv = U.canvas(T.W * sc, T.H * sc);
+    var ctx = cv.getContext('2d');
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < Art.GI_POOLS.length; i++) {
+      var p = Art.GI_POOLS[i];
+      var x = p[0] * sc, y = p[1] * sc, r = 190 * sc;
+      var gr = ctx.createRadialGradient(x, y, 4 * sc, x, y, r);
+      gr.addColorStop(0, 'rgba(255,218,158,1)');
+      gr.addColorStop(0.5, 'rgba(255,206,140,0.30)');
+      gr.addColorStop(1, 'rgba(255,214,150,0)');
+      ctx.fillStyle = gr;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    return cv;
+  };
+
   /* ================================================================= BAKE */
   Art.bake = function (table, sc) {
     var W = Math.ceil(T.W * sc), H = Math.ceil(T.H * sc);
@@ -160,17 +195,18 @@
   /* --------------------------------------------------------------- base */
   function paintBase(ctx, sc, W, H) {
     var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0a1730');
-    g.addColorStop(0.30, '#0a1428');
-    g.addColorStop(0.62, '#080f1e');
-    g.addColorStop(1, '#050912');
+    g.addColorStop(0, '#1b3767');
+    g.addColorStop(0.22, '#16305c');
+    g.addColorStop(0.48, '#12264a');
+    g.addColorStop(0.74, '#0e1d3a');
+    g.addColorStop(1, '#0a1528');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
     // subtle wood grain under the print
     ctx.save();
-    ctx.globalAlpha = 0.055;
-    ctx.strokeStyle = '#7f6a4a';
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = '#c7a878';
     ctx.lineWidth = Math.max(1, 0.7 * sc);
     var rng = new U.Rng(4242);
     for (var i = 0; i < 190; i++) {
@@ -183,9 +219,9 @@
     ctx.restore();
 
     // corner vignette baked into the print
-    var v = ctx.createRadialGradient(W * 0.5, H * 0.42, W * 0.25, W * 0.5, H * 0.5, H * 0.72);
+    var v = ctx.createRadialGradient(W * 0.5, H * 0.42, W * 0.30, W * 0.5, H * 0.5, H * 0.78);
     v.addColorStop(0, 'rgba(0,0,0,0)');
-    v.addColorStop(1, 'rgba(0,0,0,0.55)');
+    v.addColorStop(1, 'rgba(2,6,16,0.34)');
     ctx.fillStyle = v;
     ctx.fillRect(0, 0, W, H);
   }
@@ -198,9 +234,10 @@
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     var bands = [
-      { y: 96, h: 120, c1: 'rgba(60,240,190,0.20)', c2: 'rgba(60,240,190,0)' },
-      { y: 150, h: 150, c1: 'rgba(90,150,255,0.17)', c2: 'rgba(90,150,255,0)' },
-      { y: 70, h: 90, c1: 'rgba(180,110,255,0.14)', c2: 'rgba(180,110,255,0)' }
+      { y: 96, h: 130, c1: 'rgba(60,245,190,0.42)', c2: 'rgba(60,245,190,0)' },
+      { y: 150, h: 170, c1: 'rgba(90,160,255,0.34)', c2: 'rgba(90,160,255,0)' },
+      { y: 62, h: 100, c1: 'rgba(190,120,255,0.30)', c2: 'rgba(190,120,255,0)' },
+      { y: 210, h: 200, c1: 'rgba(70,210,220,0.20)', c2: 'rgba(70,210,220,0)' }
     ];
     for (var bi = 0; bi < bands.length; bi++) {
       var b = bands[bi];
@@ -241,24 +278,32 @@
     ctx.lineTo(521 * sc, 520 * sc); ctx.lineTo(0, 520 * sc);
     ctx.closePath();
     var mg = ctx.createLinearGradient(0, 330 * sc, 0, 520 * sc);
-    mg.addColorStop(0, 'rgba(30,54,92,0.85)');
-    mg.addColorStop(1, 'rgba(8,14,28,0.2)');
+    mg.addColorStop(0, 'rgba(52,92,150,0.95)');
+    mg.addColorStop(0.5, 'rgba(28,52,96,0.75)');
+    mg.addColorStop(1, 'rgba(14,26,52,0.15)');
     ctx.fillStyle = mg; ctx.fill();
-    ctx.strokeStyle = 'rgba(120,190,255,0.22)';
-    ctx.lineWidth = 1.1 * sc; ctx.stroke();
+    // ridge line only — stroking the closed path would draw a hard horizontal
+    // rule right across the middle of the playfield
+    ctx.beginPath();
+    for (var pj = 0; pj < peaks.length; pj++) {
+      if (pj === 0) ctx.moveTo(peaks[pj][0] * sc, peaks[pj][1] * sc);
+      else ctx.lineTo(peaks[pj][0] * sc, peaks[pj][1] * sc);
+    }
+    ctx.strokeStyle = 'rgba(150,215,255,0.45)';
+    ctx.lineWidth = 1.4 * sc; ctx.stroke();
     ctx.restore();
 
     /* --- Yggdrasil, the world tree, spanning the mid playfield --- */
     ctx.save();
-    ctx.translate(264 * sc, 900 * sc);
-    ctx.strokeStyle = 'rgba(150,120,70,0.30)';
+    ctx.translate(264 * sc, 940 * sc);
+    ctx.strokeStyle = 'rgba(186,150,92,0.30)';
     ctx.lineCap = 'round';
-    branch(ctx, 0, 0, -Math.PI / 2, 250 * sc, 13 * sc, 0, new U.Rng(77));
+    branch(ctx, 0, 0, -Math.PI / 2, 168 * sc, 9 * sc, 0, new U.Rng(77));
     ctx.restore();
 
     /* --- rune ring around the Well of Urd --- */
-    runeRing(ctx, 264 * sc, 420 * sc, 118 * sc, 'rgba(255,200,110,0.24)', sc, 16, 7002);
-    runeRing(ctx, 264 * sc, 420 * sc, 146 * sc, 'rgba(110,220,255,0.14)', sc, 22, 331);
+    runeRing(ctx, 264 * sc, 420 * sc, 118 * sc, 'rgba(255,206,120,0.48)', sc, 16, 7002);
+    runeRing(ctx, 264 * sc, 420 * sc, 152 * sc, 'rgba(120,225,255,0.30)', sc, 22, 331);
 
     /* --- radiating energy lines from the centre --- */
     ctx.save();
@@ -267,14 +312,25 @@
     for (var a = 0; a < 40; a++) {
       var ang = a * U.TAU / 40;
       var g2 = ctx.createLinearGradient(0, 0, Math.cos(ang) * 420 * sc, Math.sin(ang) * 420 * sc);
-      g2.addColorStop(0, 'rgba(120,200,255,0.10)');
-      g2.addColorStop(1, 'rgba(120,200,255,0)');
+      g2.addColorStop(0, 'rgba(140,215,255,0.20)');
+      g2.addColorStop(1, 'rgba(140,215,255,0)');
       ctx.strokeStyle = g2;
       ctx.lineWidth = (a % 4 === 0 ? 2.2 : 1) * sc;
       ctx.beginPath(); ctx.moveTo(Math.cos(ang) * 150 * sc, Math.sin(ang) * 150 * sc);
       ctx.lineTo(Math.cos(ang) * 430 * sc, Math.sin(ang) * 430 * sc);
       ctx.stroke();
     }
+    ctx.restore();
+
+    /* --- warm bloom of light behind the Well of Urd --- */
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    var wg = ctx.createRadialGradient(264 * sc, 420 * sc, 8 * sc, 264 * sc, 420 * sc, 210 * sc);
+    wg.addColorStop(0, 'rgba(255,196,90,0.30)');
+    wg.addColorStop(0.35, 'rgba(255,150,60,0.11)');
+    wg.addColorStop(1, 'rgba(255,140,50,0)');
+    ctx.fillStyle = wg;
+    ctx.fillRect(40 * sc, 200 * sc, 450 * sc, 450 * sc);
     ctx.restore();
 
     /* --- big hammer silhouette down at the apron --- */
@@ -309,7 +365,7 @@
   }
 
   function branch(ctx, x, y, ang, len, wid, depth, rng) {
-    if (len < 9 || depth > 7) return;
+    if (len < 14 || depth > 4) return;
     var ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len;
     ctx.lineWidth = Math.max(0.6, wid);
     ctx.beginPath();
@@ -421,8 +477,7 @@
       // silk-screened label on the lens
       if (s.txt) {
         ctx.fillStyle = 'rgba(6,10,18,0.72)';
-        var fs = Math.max(4.2, Math.min((s.h || s.w) * 0.55, (s.w) * 0.34)) * sc;
-        ctx.font = '800 ' + fs + 'px Inter, "Segoe UI", sans-serif';
+        Art.labelFont(ctx, s.txt, s, sc);
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(s.txt, s.x * sc, (s.y + (s.shape === 'arrow' ? 8 : 0.4)) * sc);
       }
@@ -456,10 +511,10 @@
 
     label('YGGDRASIL', 32, 760, 8, 'rgba(160,230,255,0.55)', -90, 800, 1.6);
     label('MIDGARD', 468, 760, 8, 'rgba(255,210,140,0.55)', 90, 800, 1.6);
-    label('BIFROST RAMP', 178, 736, 8.4, 'rgba(160,230,255,0.62)', 0, 800, 1.2);
-    label('VALHALLA RAMP', 348, 736, 8.4, 'rgba(255,210,140,0.62)', 0, 800, 1.2);
-    label('WELL OF URD', 264, 508, 9, 'rgba(255,215,140,0.70)', 0, 800, 1.6);
-    label('JOTUNN', 264, 556, 8.4, 'rgba(200,225,255,0.52)', 0, 800, 2.2);
+    label('BIFROST RAMP', 178, 772, 8.4, 'rgba(160,230,255,0.62)', 0, 800, 1.2);
+    label('VALHALLA RAMP', 348, 772, 8.4, 'rgba(255,210,140,0.62)', 0, 800, 1.2);
+    label('WELL OF URD', 264, 344, 9, 'rgba(255,215,140,0.70)', 0, 800, 1.6);
+    label('JOTUNN', 264, 524, 8.4, 'rgba(200,225,255,0.52)', 0, 800, 2.2);
     label('RUNE CAVERN', 264, 210, 8, 'rgba(190,175,255,0.55)', 0, 800, 1.8);
     label('JORMUNGANDR', 32, 600, 6.6, 'rgba(120,245,190,0.60)', -90, 800, 1.0);
     label('HEIMDALL', 452, 706, 7, 'rgba(200,225,255,0.45)', 0, 800, 1.2);
@@ -577,14 +632,26 @@
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fill();
     ctx.restore();
     var mid = [(s.a[0] + s.b[0] + s.c[0]) / 3 * sc, (s.a[1] + s.b[1] + s.c[1]) / 3 * sc];
-    var g = ctx.createRadialGradient(mid[0], mid[1] - 12 * sc, 4 * sc, mid[0], mid[1], 60 * sc);
-    g.addColorStop(0, 'rgba(140,190,255,0.55)');
-    g.addColorStop(1, 'rgba(24,44,80,0.85)');
+    var g = ctx.createLinearGradient(mid[0], mid[1] - 46 * sc, mid[0] + 20 * sc, mid[1] + 46 * sc);
+    g.addColorStop(0, 'rgba(120,205,255,0.92)');
+    g.addColorStop(0.35, 'rgba(46,110,190,0.92)');
+    g.addColorStop(0.7, 'rgba(24,58,116,0.94)');
+    g.addColorStop(1, 'rgba(80,150,230,0.9)');
     ctx.fillStyle = g; ctx.fill();
-    ctx.strokeStyle = 'rgba(190,225,255,0.55)'; ctx.lineWidth = 1.4 * sc; ctx.stroke();
+    // glossy plastic edge + top-lit sheen
+    ctx.save();
+    ctx.clip();
+    var sh = ctx.createLinearGradient(mid[0] - 40 * sc, mid[1] - 50 * sc, mid[0] + 10 * sc, mid[1] + 10 * sc);
+    sh.addColorStop(0, 'rgba(255,255,255,0.42)');
+    sh.addColorStop(0.45, 'rgba(255,255,255,0.06)');
+    sh.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sh;
+    ctx.fillRect(mid[0] - 60 * sc, mid[1] - 60 * sc, 120 * sc, 120 * sc);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(225,245,255,0.85)'; ctx.lineWidth = 1.6 * sc; ctx.stroke();
     // a rune stamped on each sling plastic
-    ctx.fillStyle = 'rgba(255,220,150,0.55)';
-    ctx.font = '700 ' + 16 * sc + 'px "Segoe UI Symbol", serif';
+    ctx.fillStyle = 'rgba(255,228,160,0.9)';
+    ctx.font = '700 ' + 19 * sc + 'px "Segoe UI Symbol", serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(s.side === 'left' ? 'ᚱ' : 'ᛁ', mid[0], mid[1] + 4 * sc);
     ctx.restore();
@@ -621,9 +688,9 @@
       ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a0 + rng.range(0.7, 3.2)); ctx.stroke();
     }
     // dust in the corners
-    ctx.globalAlpha = 0.075;
+    ctx.globalAlpha = 0.035;
     ctx.fillStyle = '#000';
-    for (var j = 0; j < 90; j++) {
+    for (var j = 0; j < 60; j++) {
       var x = rng.range(0, W), y = rng.range(0, H);
       ctx.beginPath(); ctx.arc(x, y, rng.range(4, 30) * sc, 0, U.TAU); ctx.fill();
     }
@@ -632,17 +699,52 @@
 
   /* --------------------------------------------------------------- apron */
   function paintApron(ctx, sc, W, H) {
-    var y0 = 1146 * sc;
+    // The stainless apron flanks the drain rather than covering it — the
+    // outhole gap between x=172 and x=328 has to stay clear.
+    var y0 = 1112, y1 = 1168;
+    var wings = [[0, 178], [322, 521]];
     ctx.save();
-    var g = ctx.createLinearGradient(0, y0, 0, H);
-    g.addColorStop(0, '#28313f');
-    g.addColorStop(0.25, '#1b2230');
-    g.addColorStop(1, '#0a0e16');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, y0, W, H - y0);
-    ctx.strokeStyle = 'rgba(190,215,245,0.45)';
-    ctx.lineWidth = 1.6 * sc;
-    ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(W, y0); ctx.stroke();
+    for (var w = 0; w < wings.length; w++) {
+      var x0 = wings[w][0], x1 = wings[w][1];
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x0 * sc, y1 * sc);
+      ctx.lineTo(x0 * sc, (y0 + (w ? 22 : 22)) * sc);
+      ctx.lineTo((w ? x0 + 34 : x1 - 34) * sc, y0 * sc);
+      ctx.lineTo((w ? x1 : x1) * sc, y0 * sc);
+      ctx.lineTo(x1 * sc, y1 * sc);
+      ctx.closePath();
+      var g = ctx.createLinearGradient(0, y0 * sc, 0, y1 * sc);
+      g.addColorStop(0, '#e2ecf8');
+      g.addColorStop(0.18, '#9fb1c6');
+      g.addColorStop(0.55, '#67788d');
+      g.addColorStop(1, '#2f3947');
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(240,250,255,0.6)';
+      ctx.lineWidth = 1.4 * sc;
+      ctx.stroke();
+      // brushed lines
+      ctx.clip();
+      ctx.globalAlpha = 0.09;
+      ctx.strokeStyle = '#0a1018';
+      ctx.lineWidth = 0.7 * sc;
+      for (var i = 0; i < 26; i++) {
+        var yy = (y0 + i * 2.2) * sc;
+        ctx.beginPath(); ctx.moveTo(x0 * sc, yy); ctx.lineTo(x1 * sc, yy); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    // instruction cards on each wing
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    [[88, 'RAGNARÖK'], [412, '3 BALLS']].forEach(function (p) {
+      U.roundRect(ctx, (p[0] - 62) * sc, 1132 * sc, 124 * sc, 24 * sc, 3 * sc);
+      ctx.fillStyle = 'rgba(10,16,26,0.85)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(220,235,255,0.4)'; ctx.lineWidth = 1 * sc; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,205,110,0.9)';
+      ctx.font = '800 ' + (9 * sc) + 'px Inter, sans-serif';
+      ctx.fillText(p[1], p[0] * sc, 1144 * sc);
+    });
     ctx.restore();
   }
 

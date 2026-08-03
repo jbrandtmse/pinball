@@ -1,0 +1,18 @@
+{
+  "name": "ragnarok-pinball",
+  "version": "1.0.0",
+  "description": "RAGNAROK - Hammer of the Gods: a Williams-style solid state pinball machine in the browser. The game itself has no dependencies; puppeteer-core is used only by the headless test harness.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node serve.js 8080",
+    "test": "node test/sim.js",
+    "test:rules": "node test/scenarios.js",
+    "test:soak": "node test/soak.js 45",
+    "shot": "node test/shot.js play --play"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.11.1"
+  },
+  "license": "MIT"
+}
