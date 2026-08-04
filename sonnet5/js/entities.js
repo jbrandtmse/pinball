@@ -672,6 +672,8 @@ class Scoop {
     this.locked = [];
     this.flashTimer = 0;
     this.color = opts.color || '#8a5cff';
+    this.lit = false;
+    this._pulse = 0;
   }
 
   tryCapture(ball, oldPos) {
@@ -719,11 +721,26 @@ class Scoop {
     }
   }
 
-  update(dt) { this.flashTimer = Math.max(0, this.flashTimer - dt); }
+  update(dt) {
+    this.flashTimer = Math.max(0, this.flashTimer - dt);
+    this._pulse += dt * (this.lit ? 5 : 1.2);
+  }
 
   draw(ctx) {
     const p = this.pos;
+    const pulse = (Math.sin(this._pulse) + 1) / 2;
     ctx.save();
+    if (this.lit) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, this.captureRadius + 10 + pulse * 4, 0, Math.PI * 2);
+      ctx.strokeStyle = this.color;
+      ctx.globalAlpha = 0.45 + pulse * 0.35;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 14;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     ctx.beginPath();
     ctx.arc(p.x, p.y, this.captureRadius + 4, 0, Math.PI * 2);
     ctx.fillStyle = '#000';
@@ -731,14 +748,14 @@ class Scoop {
     ctx.beginPath();
     ctx.arc(p.x, p.y, this.captureRadius, 0, Math.PI * 2);
     const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, this.captureRadius);
-    g.addColorStop(0, this.flashTimer > 0 ? '#fff' : '#1c0f2e');
+    g.addColorStop(0, this.flashTimer > 0 ? '#fff' : (this.lit ? '#3a1f5e' : '#1c0f2e'));
     g.addColorStop(1, '#000');
     ctx.fillStyle = g;
     ctx.fill();
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = this.color;
     ctx.shadowColor = this.color;
-    ctx.shadowBlur = this.locked.length > 0 ? 16 : 6;
+    ctx.shadowBlur = this.locked.length > 0 ? 16 : (this.lit ? 10 + pulse * 8 : 6);
     ctx.stroke();
     for (let i = 0; i < this.locked.length; i++) {
       ctx.beginPath();
@@ -862,4 +879,66 @@ class RampZone {
     ctx.stroke();
     ctx.restore();
   }
+}
+
+function quadBezier(p0, p1, p2, t) {
+  const mt = 1 - t;
+  return new Vec2(mt * mt * p0.x + 2 * mt * t * p1.x + t * t * p2.x, mt * mt * p0.y + 2 * mt * t * p1.y + t * t * p2.y);
+}
+
+// ---------------------------------------------------------------- Plunger-to-lanes guide
+// A physical diagonal deflector is too sensitive to exact contact angle to reliably route
+// a plunged ball into the top lanes, so this uses the same capture-and-follow-path
+// technique as ramps: catch the ball partway up the shooter lane, then sweep it along a
+// curve into the lane group. WHERE it releases still depends on how hard the ball was
+// launched, so plunge power keeps its meaning (a light plunge lands short/right, a hard
+// plunge carries all the way to the far-left lane).
+class PlungerGuide {
+  constructor(opts) {
+    this.entryA = opts.entryA;
+    this.entryB = opts.entryB;
+    this.minSpeed = opts.minSpeed ?? 400;
+    this.travelTime = opts.travelTime ?? 0.3;
+    this.releaseY = opts.releaseY ?? 68;
+    this.xRange = opts.xRange || [200, 320];
+    this.speedRange = opts.speedRange || [300, 2100];
+    this.midPoint = opts.midPoint || new Vec2(430, 190);
+    this._captured = [];
+  }
+
+  tryCapture(ball, oldPos) {
+    if (ball.captured) return false;
+    if (ball.vel.y >= 0) return false;
+    const hit = closestPtSegmentSegment(oldPos, ball.pos, this.entryA, this.entryB);
+    if (hit.dist > ball.radius) return false;
+    const speed = ball.vel.length();
+    if (speed < this.minSpeed) return false;
+
+    const t = clamp((speed - this.speedRange[0]) / (this.speedRange[1] - this.speedRange[0]), 0, 1);
+    const releaseX = lerp(this.xRange[1], this.xRange[0], t); // faster plunge carries further (smaller x)
+    const start = ball.pos.clone();
+    ball.captured = this;
+    ball.vel.set(0, 0);
+    this._captured.push({ ball, t: 0, start, end: new Vec2(releaseX, this.releaseY) });
+    return true;
+  }
+
+  updateCaptured(dt) {
+    for (let i = this._captured.length - 1; i >= 0; i--) {
+      const c = this._captured[i];
+      c.t += dt / this.travelTime;
+      if (c.t >= 1) {
+        c.ball.pos.set(c.end.x, c.end.y);
+        c.ball.vel = new Vec2(randRange(-40, 40), 480);
+        c.ball.captured = null;
+        this._captured.splice(i, 1);
+      } else {
+        const p = quadBezier(c.start, this.midPoint, c.end, c.t);
+        c.ball.pos.set(p.x, p.y);
+      }
+    }
+  }
+
+  update(dt) {}
+  draw(ctx) {}
 }
