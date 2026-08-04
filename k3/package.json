@@ -1,0 +1,13 @@
+{
+  "name": "nova-strike-pinball",
+  "version": "1.0.0",
+  "description": "NOVA STRIKE - a Williams-style solid-state pinball machine in the browser. Zero runtime dependencies.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node serve.js 8080",
+    "test": "node test/sim.js",
+    "test:soak": "node test/soak.js"
+  },
+  "license": "MIT"
+}

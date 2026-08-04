@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>NOVA STRIKE — Pinball</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23cfd8ea'/></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="cab">
+    <div id="backbox">
+      <canvas id="dmd" width="512" height="128"></canvas>
+      <div id="speaker-left" class="speaker"></div>
+      <div id="speaker-right" class="speaker"></div>
+    </div>
+    <div id="playfield-wrap">
+      <canvas id="pf" width="720" height="1560"></canvas>
+      <div id="scanlines"></div>
+    </div>
+    <div id="help">
+      <span><b>SHIFT&nbsp;/&nbsp;Z</b> left flipper</span>
+      <span><b>SHIFT&nbsp;/&nbsp;/</b> right flipper</span>
+      <span><b>&darr;&nbsp;/&nbsp;SPACE</b> plunger</span>
+      <span><b>&larr;&uarr;&rarr;</b> nudge</span>
+      <span><b>ENTER</b> start</span>
+      <span><b>P</b> pause</span>
+      <span><b>M</b> mute</span>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

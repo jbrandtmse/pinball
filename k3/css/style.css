@@ -1,0 +1,90 @@
+/* NOVA STRIKE — cabinet chrome */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #05060a radial-gradient(ellipse at 50% 30%, #101528 0%, #05060a 70%);
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #8fa3c8;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#cab {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#backbox {
+  position: relative;
+  background: linear-gradient(180deg, #1a1230 0%, #0d0a1c 100%);
+  border: 3px solid #2a2145;
+  border-bottom-color: #171130;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 90px;
+  box-shadow: 0 0 40px rgba(80, 40, 160, .25), inset 0 0 60px rgba(0,0,0,.6);
+}
+
+#dmd {
+  display: block;
+  width: 512px;
+  height: 128px;
+  background: #0a0502;
+  border-radius: 4px;
+  box-shadow: inset 0 0 24px #000, 0 0 18px rgba(255, 120, 20, .12);
+  image-rendering: pixelated;
+}
+
+.speaker {
+  position: absolute;
+  top: 18px;
+  width: 64px;
+  height: 92px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 50%, #000 2px, transparent 2px) 0 0 / 8px 8px,
+    linear-gradient(180deg, #141021, #0a0812);
+  box-shadow: inset 0 0 12px #000;
+}
+#speaker-left { left: 12px; }
+#speaker-right { right: 12px; }
+
+#playfield-wrap {
+  position: relative;
+  border: 3px solid #2a2145;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.8), 0 0 40px rgba(80,40,160,.18);
+  line-height: 0;
+}
+
+#pf {
+  display: block;
+  background: #060a18;
+}
+
+#scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+  border-radius: 0 0 9px 9px;
+  mix-blend-mode: overlay;
+}
+
+#help {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: .4px;
+  opacity: .65;
+  padding: 4px 8px 8px;
+}
+#help b { color: #ffb347; }

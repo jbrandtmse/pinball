@@ -1,0 +1,213 @@
+// NOVA STRIKE — dot matrix display (DMD).
+// Renders a 128x32 orange dot-matrix onto the #dmd canvas (scaled 4x).
+// A 5x7 font plus a big 8x12 score font, message queue with priorities,
+// and simple attract-mode animations.
+
+const W = 128, H = 32;
+
+// 5x7 font, columns LSB-first, 5 bytes per glyph
+const FONT = {
+  'A': [0x7E, 0x09, 0x09, 0x09, 0x7E], 'B': [0x7F, 0x49, 0x49, 0x49, 0x36],
+  'C': [0x3E, 0x41, 0x41, 0x41, 0x22], 'D': [0x7F, 0x41, 0x41, 0x41, 0x3E],
+  'E': [0x7F, 0x49, 0x49, 0x49, 0x41], 'F': [0x7F, 0x09, 0x09, 0x09, 0x01],
+  'G': [0x3E, 0x41, 0x49, 0x49, 0x3A], 'H': [0x7F, 0x08, 0x08, 0x08, 0x7F],
+  'I': [0x41, 0x41, 0x7F, 0x41, 0x41], 'J': [0x30, 0x40, 0x40, 0x40, 0x3F],
+  'K': [0x7F, 0x08, 0x14, 0x22, 0x41], 'L': [0x7F, 0x40, 0x40, 0x40, 0x40],
+  'M': [0x7F, 0x02, 0x0C, 0x02, 0x7F], 'N': [0x7F, 0x02, 0x04, 0x08, 0x7F],
+  'O': [0x3E, 0x41, 0x41, 0x41, 0x3E], 'P': [0x7F, 0x09, 0x09, 0x09, 0x06],
+  'Q': [0x3E, 0x41, 0x51, 0x21, 0x5E], 'R': [0x7F, 0x09, 0x19, 0x29, 0x46],
+  'S': [0x26, 0x49, 0x49, 0x49, 0x32], 'T': [0x01, 0x01, 0x7F, 0x01, 0x01],
+  'U': [0x3F, 0x40, 0x40, 0x40, 0x3F], 'V': [0x1F, 0x20, 0x40, 0x20, 0x1F],
+  'W': [0x7F, 0x20, 0x18, 0x20, 0x7F], 'X': [0x63, 0x14, 0x08, 0x14, 0x63],
+  'Y': [0x03, 0x04, 0x78, 0x04, 0x03], 'Z': [0x61, 0x51, 0x49, 0x45, 0x43],
+  '0': [0x3E, 0x51, 0x49, 0x45, 0x3E], '1': [0x00, 0x42, 0x7F, 0x40, 0x00],
+  '2': [0x42, 0x61, 0x51, 0x49, 0x46], '3': [0x21, 0x41, 0x45, 0x4B, 0x31],
+  '4': [0x18, 0x14, 0x12, 0x7F, 0x10], '5': [0x27, 0x45, 0x45, 0x45, 0x39],
+  '6': [0x3C, 0x4A, 0x49, 0x49, 0x30], '7': [0x01, 0x71, 0x09, 0x05, 0x03],
+  '8': [0x36, 0x49, 0x49, 0x49, 0x36], '9': [0x06, 0x49, 0x49, 0x29, 0x1E],
+  ' ': [0, 0, 0, 0, 0], '!': [0x00, 0x00, 0x5F, 0x00, 0x00],
+  ',': [0x00, 0x50, 0x30, 0x00, 0x00], '.': [0x00, 0x60, 0x60, 0x00, 0x00],
+  ':': [0x00, 0x36, 0x36, 0x00, 0x00], '-': [0x08, 0x08, 0x08, 0x08, 0x08],
+  '+': [0x08, 0x08, 0x3E, 0x08, 0x08], '/': [0x20, 0x10, 0x08, 0x04, 0x02],
+  '*': [0x14, 0x08, 0x3E, 0x08, 0x14], '=': [0x14, 0x14, 0x14, 0x14, 0x14],
+  '?': [0x02, 0x01, 0x51, 0x09, 0x06], '%': [0x23, 0x13, 0x08, 0x64, 0x62],
+  '<': [0x08, 0x14, 0x22, 0x41, 0x00], '>': [0x00, 0x41, 0x22, 0x14, 0x08],
+  "'": [0x00, 0x00, 0x03, 0x00, 0x00], '_': [0x40, 0x40, 0x40, 0x40, 0x40],
+  '$': [0x24, 0x4A, 0x7F, 0x4A, 0x12], 'X2': [0x63, 0x14, 0x08, 0x14, 0x63]
+};
+
+export class DMD {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.scale = canvas.width / W;
+    this.buf = new Uint8Array(W * H);
+    this.queue = [];        // [{lines, until}]
+    this.current = null;
+    this.scoreVal = 0;
+    this.ballNum = 1;
+    this.time = 0;
+    this.attractT = 0;
+    this.mode = 'attract';  // 'attract' | 'game'
+    this.offscreen = typeof document !== 'undefined';
+  }
+
+  score(v, ball) {
+    this.scoreVal = v;
+    if (ball) this.ballNum = ball;
+    this.mode = 'game';
+  }
+
+  message(lines, secs = 2, priority = false) {
+    const msg = { lines, until: this.time + secs };
+    if (priority) { this.current = msg; this.queue.length = 0; }
+    else this.queue.push(msg);
+  }
+
+  tick(dt) {
+    this.time += dt;
+    if (this.current && this.time > this.current.until) this.current = null;
+    if (!this.current && this.queue.length) this.current = this.queue.shift();
+    if (this.mode === 'attract') this.attractT += dt;
+    this.render();
+  }
+
+  clear() { this.buf.fill(0); }
+
+  px(x, y, on = 1) {
+    x |= 0; y |= 0;
+    if (x < 0 || x >= W || y < 0 || y >= H) return;
+    this.buf[y * W + x] = on;
+  }
+
+  text(str, x, y, kern = 1) {
+    str = String(str).toUpperCase();
+    let cx = x;
+    for (const ch of str) {
+      const g = FONT[ch] || FONT[' '];
+      for (let col = 0; col < 5; col++) {
+        const bits = g[col];
+        for (let row = 0; row < 7; row++) {
+          if (bits & (1 << row)) this.px(cx + col, y + row);
+        }
+      }
+      cx += 5 + kern;
+    }
+    return cx - x;
+  }
+
+  textW(str, kern = 1) { return String(str).length * (5 + kern) - kern; }
+
+  center(str, y, kern = 1) {
+    this.text(str, Math.round((W - this.textW(str, kern)) / 2), y, kern);
+  }
+
+  // big 8x12 digits for the score
+  bigDigit(d, x, y) {
+    const segs = BIG[+d];
+    for (let r = 0; r < 12; r++) {
+      for (let c = 0; c < 8; c++) {
+        if (segs[r] & (1 << (7 - c))) this.px(x + c, y + r);
+      }
+    }
+  }
+
+  bigScore(str, x, y) {
+    let cx = x;
+    for (const ch of str) {
+      if (ch >= '0' && ch <= '9') { this.bigDigit(ch, cx, y); cx += 9; }
+      else if (ch === ',') { this.px(cx + 1, y + 10); this.px(cx + 2, y + 11); cx += 4; }
+      else cx += 5;
+    }
+  }
+
+  bigScoreW(str) {
+    let w = 0;
+    for (const ch of str) w += (ch >= '0' && ch <= '9') ? 9 : (ch === ',' ? 4 : 5);
+    return w;
+  }
+
+  render() {
+    this.clear();
+    if (this.mode === 'attract') this.renderAttract();
+    else this.renderGame();
+    // blit with glow
+    const ctx = this.ctx, s = this.scale;
+    ctx.fillStyle = '#0a0502';
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (!this.buf[y * W + x]) continue;
+        ctx.fillStyle = '#ff8c1a';
+        ctx.beginPath();
+        ctx.arc(x * s + s / 2, y * s + s / 2, s * 0.42, 0, 7);
+        ctx.fill();
+      }
+    }
+  }
+
+  renderGame() {
+    if (this.current) {
+      const L = this.current.lines;
+      if (L.length === 1) this.center(L[0], 12);
+      else {
+        this.center(L[0], 4);
+        this.center(L[1] || '', 20);
+      }
+      return;
+    }
+    const s = this.scoreVal.toLocaleString('en-US');
+    const w = this.bigScoreW(s);
+    this.bigScore(s, Math.round((W - w) / 2), 10);
+    this.text('BALL ' + this.ballNum, 2, 1);
+    this.text('NOVA', 104, 1);
+  }
+
+  renderAttract() {
+    const t = this.attractT % 16;
+    this.clear();
+    if (t < 4) {
+      // title with twinkling starfield
+      for (let i = 0; i < 24; i++) {
+        const sx = (i * 37 + ((this.attractT * 11) | 0)) % W;
+        const sy = (i * 53) % H;
+        this.px(sx, sy);
+      }
+      this.center('NOVA', 5);
+      this.center('STRIKE', 20);
+    } else if (t < 8) {
+      this.center('HIGH SCORES', 1);
+      const hs = (this.highs || []).slice(0, 3);
+      hs.forEach((h, i) => {
+        const y = 10 + i * 7;
+        this.text((i + 1) + ' ' + h.initials, 4, y);
+        const s = h.score.toLocaleString('en-US');
+        this.text(s, W - 4 - this.textW(s), y);
+      });
+      if (!hs.length) this.center('NO SCORES YET', 16);
+    } else if (t < 12) {
+      this.center('PRESS ENTER', 8);
+      this.center('TO START', 20);
+    } else {
+      this.center('SHIFT = FLIPPERS', 2);
+      this.center('DOWN = PLUNGER', 12);
+      this.center('ARROWS = NUDGE', 22);
+    }
+  }
+
+  setHighs(list) { this.highs = list; }
+}
+
+// 8x12 bold digits for the score readout
+const BIG = [
+  [0x3C, 0x7E, 0xE7, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xE7, 0x7E, 0x3C], // 0
+  [0x18, 0x1C, 0x1E, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x7E, 0x7E], // 1
+  [0x3C, 0x7E, 0xE7, 0xC3, 0xC0, 0x60, 0x30, 0x18, 0x0C, 0x06, 0xFF, 0xFF], // 2
+  [0x3C, 0x7E, 0xE7, 0xC0, 0xC0, 0x3C, 0x3C, 0xC0, 0xC0, 0xE7, 0x7E, 0x3C], // 3
+  [0x60, 0x70, 0x78, 0x6C, 0x66, 0x63, 0xFF, 0xFF, 0x60, 0x60, 0x60, 0x60], // 4
+  [0xFF, 0xFF, 0x03, 0x03, 0x3F, 0x7F, 0xE0, 0xC0, 0xC0, 0xE3, 0x7F, 0x3E], // 5
+  [0x3C, 0x7E, 0xE7, 0xC3, 0x03, 0x3F, 0x7F, 0xE3, 0xC3, 0xE7, 0x7E, 0x3C], // 6
+  [0xFF, 0xFF, 0xC0, 0x60, 0x30, 0x18, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C], // 7
+  [0x3C, 0x7E, 0xE7, 0xC3, 0xE7, 0x7E, 0x7E, 0xE7, 0xC3, 0xC3, 0x7E, 0x3C], // 8
+  [0x3C, 0x7E, 0xE7, 0xC3, 0xC7, 0xFE, 0xFC, 0xC0, 0xC3, 0xE7, 0x7E, 0x3C]  // 9
+];
