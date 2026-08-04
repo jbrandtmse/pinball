@@ -162,12 +162,15 @@
     // ---------------- left ramp (entrance lane + flight path) ----------------
     // left guide curls over at the top toward the orbit guide, sealing the
     // dead sliver between them (entrance < ball width)
-    wall([[80, 398], [128, 430], [110, 560]], { rad: 3, e: 0.5 }, "ramp");
+    // sliver-sealing curl ends high at a convex peak with the ridge, so a
+    // slow ball can never bridge curl face + ridge cap
+    wall([[80, 398], [124, 414]], { rad: 3, e: 0.5 }, "ramp");
+    wall([[128, 430], [110, 560]], { rad: 3, e: 0.5 }, "ramp");
     wall([[196, 586], [188, 560], [170, 430]], { rad: 3, e: 0.5 }, "ramp");
-    // single ridge from the guide junction to the catapult crown: constant
-    // 6-degree descent, doubles as the lane back stop; everything sheds
-    // rightward into the pocket (which captures)
-    wall([[128, 420], [238, 431]], { rad: 3, e: 0.3 }, "ramp");
+    // ridge from the curl peak to the catapult crown: constant ~8.5-degree
+    // descent, doubles as the lane back stop; everything sheds rightward
+    // into the pocket (which captures)
+    wall([[124, 414], [238, 431]], { rad: 3, e: 0.3 }, "ramp");
     world.addSensorSeg({ ax: 126, ay: 472, bx: 172, by: 472, id: "lrampEnter" });
     world.addSensorSeg({ ax: 124, ay: 442, bx: 174, by: 442, id: "lrampMade" });
     lamp("aRampL", 149, 612, "arrow", 0);

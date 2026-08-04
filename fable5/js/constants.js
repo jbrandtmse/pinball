@@ -15,9 +15,9 @@
     PF_W: 540,            // 20.25"
     PF_H: 1120,           // 42"
     BALL_R: 14,           // 1.0625" dia => r ~14.2
-    GRAV: 1180,           // px/s^2 along playfield (9.81*sin(6.5deg) ~= 1.11 m/s^2, tuned +6% for feel)
+    GRAV: 1060,           // px/s^2 along playfield (~10% under real 6.5deg pitch, for playability)
     AIR_DRAG: 0.06,       // 1/s velocity damping (rolling + air)
-    MAX_SPEED: 3600,      // px/s hard clamp (~3.4 m/s)
+    MAX_SPEED: 3240,      // px/s hard clamp (~3 m/s)
     PHYS_HZ: 720,         // substep rate
     MAX_FRAME: 0.05,      // clamp render frame dt
 
@@ -27,17 +27,17 @@
     FLIP_R1: 7.5,
     FLIP_REST: 32,         // degrees below pivot line
     FLIP_UP: -22,          // degrees above
-    FLIP_OMEGA_UP: 42,     // rad/s stroke
-    FLIP_OMEGA_DN: 26,
+    FLIP_OMEGA_UP: 38,     // rad/s stroke
+    FLIP_OMEGA_DN: 23,
     LFLIP_X: 176, RFLIP_X: 364, FLIP_Y: 1044,
 
     // Plunger / shooter lane
     SHOOT_X0: 500, SHOOT_X1: 540,   // lane inner walls
     SHOOT_CX: 520,
-    PLUNGE_MIN: 950,
-    PLUNGE_MAX: 3050,
+    PLUNGE_MIN: 860,
+    PLUNGE_MAX: 2750,
     PLUNGE_CHARGE_T: 1.35,  // seconds to full pull
-    PLUNGE_FLOOR: 0.2,      // quick tap still fires at this charge
+    PLUNGE_FLOOR: 0.22,     // quick tap still fires at this charge
 
     BALLS_TOTAL: 6,         // trough capacity (4-ball wizard multiball + spares)
     BALLS_PER_GAME: 3,

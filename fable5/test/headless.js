@@ -177,7 +177,7 @@ function testAimedShots() {
     g.senseScoop = (e) => { if (s.ev === "scoop") made = true; oldScoop(e); };
     const dx = s.to[0] - s.from[0], dy = s.to[1] - s.from[1];
     const len = Math.hypot(dx, dy);
-    const sp = 2350;
+    const sp = 2100; // representative flipper exit speed after tuning
     env.spawn(s.from[0], s.from[1], (dx / len) * sp, (dy / len) * sp);
     for (let i = 0; i < 180 && !made; i++) env.step(1);
     ok(made, "shot reachable: " + s.name);

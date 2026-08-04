@@ -76,7 +76,7 @@
         const a = aims[name]; if (!a) return "unknown";
         this.clearBalls();
         const dx = a[1][0] - a[0][0], dy = a[1][1] - a[0][1], l = Math.hypot(dx, dy);
-        return this.spawn(a[0][0], a[0][1], dx / l * 2350, dy / l * 2350);
+        return this.spawn(a[0][0], a[0][1], dx / l * 2100, dy / l * 2100);
       },
       key(action, downMs) {
         game.action(action, true);

@@ -516,8 +516,8 @@
       if (now - this._slingCd[i] < 0.12) return;
       this._slingCd[i] = now;
       const b = e.ball;
-      const k = 830 + this.rng() * 190;
-      b.vx = e.nx * k; b.vy = e.ny * k - 170;
+      const k = 750 + this.rng() * 170;
+      b.vx = e.nx * k; b.vy = e.ny * k - 155;
       this.slingAnim[i] = 1;
       this.score(SC.SLING); this.bonus(2000);
       this.sfx("sling");
@@ -532,7 +532,7 @@
       this._popCd[i] = now;
       const b = e.ball, P = this.layout.meta.pops[i];
       const ang = Math.atan2(b.y - P[1], b.x - P[0]) + (this.rng() - 0.5) * 0.3;
-      const k = 1000 + this.rng() * 230;
+      const k = 900 + this.rng() * 210;
       b.vx = Math.cos(ang) * k; b.vy = Math.sin(ang) * k;
       this.popAnim[i] = 1;
       const p = this.p;
@@ -600,7 +600,7 @@
     onKickback(ball) {
       const p = this.p;
       if (p && p.kickback && !this.tilt) {
-        ball.vx = 5 + this.rng() * 10; ball.vy = -1560;
+        ball.vx = 5 + this.rng() * 10; ball.vy = -1480;
         p.kickback = false;
         this.kickbackAnim = 0.5;
         this.score(SC.KICKBACK);
@@ -1148,7 +1148,7 @@
       this.registerShot(which === "left" ? "rampL" : "rampR");
     }
     stepRamps(dt) {
-      const HG = 3000, DRAG = 26;
+      const HG = 2700, DRAG = 26;
       for (const b of this.world.balls) {
         if (!b.onRamp) continue;
         const R = b.onRamp, r = R.r;
