@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PHOENIX: ASCENSION</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #0a0d13;
+      color: #cdd4e0;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+      -webkit-user-select: none; user-select: none;
+    }
+    #wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      height: 100vh;
+    }
+    h1 {
+      margin: 8px 0 4px; font-size: 20px; letter-spacing: 2px;
+      color: #ff9d2e; text-transform: uppercase;
+    }
+    #table {
+      display: block;
+      width: min(96vw, 90vh * 0.435);
+      height: auto;
+      border: 2px solid #2a2f3a;
+      border-radius: 8px;
+      background: #141821;
+    }
+    .help {
+      margin: 6px 0 10px; font-size: 12px; color: #7a8497; text-align: center; line-height: 1.5;
+    }
+    .help b { color: #9aa4b4; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <h1>Phoenix: Ascension</h1>
+    <canvas id="table"></canvas>
+    <div class="help">
+      <b>&larr; / &rarr;</b> or <b>Z / /</b> — flippers &nbsp;&middot;&nbsp;
+      hold <b>SPACE</b> / <b>ENTER</b> and release — launch &nbsp;&middot;&nbsp;
+      <b>R</b> — new game
+    </div>
+  </div>
+
+  <!-- Load order matters: engine first, then table (needs engine), then renderer, then loop. -->
+  <script src="js/engine.js"></script>
+  <script src="js/table.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
