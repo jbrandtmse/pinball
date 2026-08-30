@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RISE OF ATLANTIS — Williams-style Pinball</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="room">
+    <aside id="left" class="panel">
+      <h1>RISE OF ATLANTIS</h1>
+      <p class="tag">Williams-style solid-state pinball &middot; 1996</p>
+      <h2>RULE CARD</h2>
+      <ul class="rules">
+        <li><b>SKILL SHOT</b> — light the flashing lane at launch (50,000)</li>
+        <li><b>TIDE LANES</b> — complete T-I-D-E for bonus multiplier &amp; kickback</li>
+        <li><b>TEMPLE COMBO</b> — alternate ramps within 4s, up to 400,000</li>
+        <li><b>TRIDENTS</b> — light <i>Poseidon's Gift</i> at the whirlpool</li>
+        <li><b>PEARL BANK</b> — complete to lock balls.
+          2 locks = <b>KRAKEN MULTIBALL</b> — 3 balls, jackpots 250,000,
+          super jackpot at whirlpool 500,000</li>
+        <li><b>RISE MODES</b> — hit <i>TEMPEST</i> to start:
+          Tower &rarr; Pearls &rarr; Tides &rarr; Crown</li>
+        <li><b>POSEIDON'S FURY</b> — complete all modes for the 3-ball
+          wizard: 500,000 jackpots, 1,000,000 super, 5,000,000
+          <b>CITY AWAKENED</b></li>
+        <li><b>EXTRA BALL</b> at 1,500,000 and from Poseidon's Gift</li>
+        <li><b>BONUS</b> — modes, TIDE completions &amp; Krakens &times;
+          multiplier (up to 6X)</li>
+      </ul>
+      <div id="status" class="status"></div>
+    </aside>
+
+    <canvas id="machine" width="430" height="1300"></canvas>
+
+    <aside id="right" class="panel">
+      <h2>PLAYERS</h2>
+      <div id="players"></div>
+      <h2>HIGH SCORES</h2>
+      <div id="hiscores"></div>
+      <h2>CONTROLS</h2>
+      <table class="controls">
+        <tr><td class="k">A / &larr; / L.Shift / Z</td><td>Left flipper</td></tr>
+        <tr><td class="k">D / &rarr; / R.Shift / .</td><td>Right flipper</td></tr>
+        <tr><td class="k">SPACE (hold)</td><td>Plunger — release to launch</td></tr>
+        <tr><td class="k">X / . / &uarr;</td><td>Nudge left / right / up</td></tr>
+        <tr><td class="k">ENTER</td><td>Start game &middot; add player</td></tr>
+        <tr><td class="k">1 – 4</td><td>Start with players</td></tr>
+        <tr><td class="k">P</td><td>Pause</td></tr>
+        <tr><td class="k">M</td><td>Mute</td></tr>
+      </table>
+      <p class="warn">3 nudges = TILT. flippers die.</p>
+    </aside>
+  </div>
+
+  <script src="js/util.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/table.js"></script>
+  <script src="js/rules.js"></script>
+  <script src="js/dmd.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
