@@ -236,13 +236,32 @@
     })();
     game.dropTargets = DT;
 
+    // No deflector guide here — the ball grazes the ramp-exit guide at (880,700)
+    // and must land the bank on its own. The post-kickout arc is tuned in Game.step
+    // (KX=-850, KY=-2700) so it peaks above y=820 and lands in the drop-target bank.
+
+    // ========================================================================
+    // SLING-POCKET DRAIN GUIDE — the ball can wedge in the left sling V at
+    // (326,2066): it settles on the right sling guide and bounces forever there,
+    // never resting long enough for the stuck-recovery to fire, and never
+    // reaching the center drain (which sits at x460-740). This short passive rail
+    // sits just inside the pocket so a wedging ball grazes it and is redirected
+    // toward the drain instead of looping. Placed below the drop-bank deflector,
+    // only contacted on the ball's descent, so it never affects the launch arc.
+    // ========================================================================
+    guide(world, 280, 2100, 240, 2110);
+
     // ========================================================================
     // STAND-UP TARGETS ("Wings") — a cluster of 4 spring-back targets, upper
     // right. Hit all four to light Wings.
     // ========================================================================
     var ST = [];
     (function () {
-      var cols = 2, rows = 2, sx = 830, sy = 1050, gx = 90, gy = 95;
+      // The stand band sits in the launch corridor: a ball kicked up-left from the
+      // shooter lane crosses y=1145 at x~910, straight into this band's x-span
+      // (798-952), which bounces it back to drain. Shift the band left by 200 so the
+      // launch arc passes clear of it (see the lane-out kickout below).
+      var cols = 2, rows = 2, sx = 430, sy = 1050, gx = 90, gy = 95;
       for (var r = 0; r < rows; r++) {
         for (var c = 0; c < cols; c++) {
           var cx = sx + c * gx, cy = sy + r * gy;
@@ -261,7 +280,7 @@
     // top lane. A crossing gate at the exit counts the run. Complete 3 runs to
     // trigger Inferno multiball.
     // ========================================================================
-    guide(world, 980, 1500, 1000, 760);        // ramp up the right side
+    guide(world, 1000, 1400, 1000, 760);       // ramp up the right side
     guide(world, 1000, 760, 880, 700);         // exit toward the top lane
     var rampGate = new PA.Gate({ x: 940, y: 730 }, { x: 940, y: 650 }, {
       onPass: function (ball) { game.onRamp(); }
@@ -489,43 +508,127 @@
     // fixed up-left vector so every launch power gets an identical post-kick arc
     // regardless of how fast it was travelling — an additive impulse would scale with
     // power and give wildly inconsistent escapes. Fires once per ball via _kicked so a
-    // looping ball isn't re-kicked. Tuned so every launch power (0.6..1.0) escapes and
-    // reaches the upper-field features.
-    // Fixed post-kick velocity. The ball must clear the lane-divider tip (y=1900)
-    // from where it rests on the plunger (~y2330); a kick fired any lower bounces
-    // off the divider collision zone and falls straight back into the lane. 1900
-    // fires just as the ball passes the tip so every power escapes identically.
-    var KX = -900;
-    var KY = -2400;
-    var KYTHRESH = 1900;
+    // looping ball isn't re-kicked. Tuned (KX=-850, KY=-2700) so the arc rises steeply
+    // enough to peak above the drop-target bank (y=820) and land in it. The stand band
+    // was shifted left (sx 430) so this arc clears it instead of clipping the band and
+    // bouncing back to drain.
+    var KX = -850;
+    var KY = -2700;
+    var KXTRESH = 1005;
+    var KYTHRESH = 1700;
+    // Fixed kickoff point (SNAP_Y / SNAP_X): every launch power's arc is set from
+    // the SAME starting position and velocity, so higher-power balls can't overshoot
+    // the detection threshold and graze the ramp-wall corner differently. Detection
+    // is by first crossing of SNAP_Y; the ball's x is then snapped to SNAP_X so the
+    // launch point is identical across all powers.
+    var SNAP_Y = 1700;
+    var SNAP_X = 1005;
     for (var j = world.balls.length - 1; j >= 0; j--) {
       var b = world.balls[j];
       if (!b.active || b._kicked) continue;
-      // Kickout: a ball still in the shooter lane climbing back up past y=1900
-      // (i.e. it escaped the lower field and is heading back down the lane) gets a
-      // hard left-and-down impulse to eject it into main play toward the features,
-      // rather than letting it fall straight back to the plunger forever.
-      if (b.y < KYTHRESH && b.vy < 0 && b.x > 900 && b.x < 1270) {
+      // Kickout: fire once the ball has already climbed past the ramp-guide wall
+      // (x < KXTRESH, i.e. it is now in the open left field, still rising) and set
+      // its velocity to a fixed shallow up-left arc. Firing here — after the ball
+      // crosses the wall rather than before — means the arc curves away from the
+      // guide instead of rising through it (which grazed the guide's bottom corner
+      // and drained the ball's energy). The shallow arc peaks near the bumper row.
+      // The kickoff point is snapped to a fixed (SNAP_X, SNAP_Y) so every power gets
+      // an identical arc regardless of how fast it was travelling.
+      if (b.y < SNAP_Y && b.vy < 0 && b.x < KXTRESH && b.x > 120) {
+        b.x = SNAP_X;
+        b.y = SNAP_Y;
         b.vx = KX;
         b.vy = KY;
         b._kicked = true;
       }
     }
 
-    // Out-lane auto-return: a ball that sits idle in a side pocket below the
-    // flipper line (left of the shooter lane) for too long is sent back to the
-    // plunger. This position-based timer is robust against any entry path, and
-    // it deliberately ignores balls already resting on the plunger (x >=
-    // SHOOT_X_MIN) so they wait to be launched rather than being re-ejected.
-    var LANE_IDLE = 1.0; // seconds a ball may sit in a pocket before returning
+    // Out-lane / field auto-return: keeps the game loopable. A ball that either
+    // (a) settles in a side pocket below the flipper line (left of the shooter
+    // lane), or (b) comes back down and rests on the plunger (right of the
+    // divider, near the shooter-lane floor), is relaunched after a short idle
+    // timer. (b) models a real table firing the plunger when the ball returns:
+    // a ball that simply sits on the plunger is treated as a new shot rather
+    // than being stranded, which is what left the game stuck at one launch.
+    //
+    // (c) General wedge net: a ball that has come to a COMPLETE rest (speed
+    // below 20) for more than 2 seconds ANYWHERE on the playfield — including
+    // a geometry trap like the left sling pocket at (326,2066) where it wedges
+    // between the two sling guides — is relaunched. Without this, a wedged ball
+    // would sit there forever and the game would stall. This is a safety net,
+    // not a primary mechanic: a ball that is actively moving or scoring is never
+    // affected, and a ball only rests long enough to trip this after it has
+    // clearly lost all playability.
+    //
+    // (d) Bounce-loop detector: a ball that bounces forever in a lower-field
+    // pocket between the two flippers (never resting, never rising high enough
+    // to reach the drain, never reaching the drop bank) is a geometry trap — no
+    // launch leaves it, and holding both flippers under it only makes the bounce
+    // repeat. Such a ball is drained after LOW_FIELD_SECS of continuous time with
+    // its highest point (min y) staying below LOW_FIELD_PEAK. The ball is moving
+    // fast, so it's not caught by a resting/wedge check; instead we watch how far
+    // up it climbs — a ball confined to the pocket never rises above the peak.
+    var LANE_IDLE = 1.0; // seconds a ball may sit before being relaunched
+    var WEDGE_IDLE = 2.0; // seconds a ball may rest anywhere before being relaunched
+    var WEDGE_DRAIN_AFTER = 5; // relaunches before a re-wedging ball is drained
+    var LOW_FIELD_SECS = 12; // seconds stuck in the pocket before drain
+    var LOW_FIELD_PEAK = 1950; // a confined pocket never rises above this y
+    var LOW_FIELD_Y = 1850; // below this the ball is in the lower playfield
+    var LOW_FIELD_WINDOW = Math.round(LOW_FIELD_SECS * 60); // frames
+    var FRAME_DT = 1 / 60; // game.step() runs once per physics frame
     for (var j = world.balls.length - 1; j >= 0; j--) {
       var b = world.balls[j];
       if (!b.active) continue;
+      // (d) bounce loop: in the lower field; track its highest point this window
+      var inLowerField = b.y > LOW_FIELD_Y && b.y < DRAIN_Y - 100;
+      if (inLowerField) {
+        if (!b._lowSeen) b._lowSeen = [];
+        b._lowSeen.push(b.y);
+        if (b._lowSeen.length > LOW_FIELD_WINDOW) b._lowSeen.shift();
+        if (b._lowSeen.length >= LOW_FIELD_WINDOW) {
+          var highest = Math.min.apply(null, b._lowSeen);
+          if (highest <= LOW_FIELD_PEAK) {
+            // it climbed up to (or above) the pocket rim — escaped, reset
+            b._lowSeen = [];
+            b._lowTimer = 0;
+          } else if (b._lowTimer === undefined) {
+            b._lowTimer = 0;
+          }
+          b._lowTimer += FRAME_DT;
+          if (b._lowTimer > LOW_FIELD_SECS) {
+            b.active = false;
+            world.balls.splice(j, 1);
+            this.ballsInPlay--;
+            break;
+          }
+        }
+      } else {
+        b._lowSeen = [];
+        b._lowTimer = 0;
+      }
+      var onPlunger = b.y > SHOOT_Y - 60 && b.x > SHOOT_X_MIN;
       var inPocket = b.y > DRAIN_Y - 120 && b.x < SHOOT_X_MIN;
-      if (inPocket) {
+      var resting = b.speed() < 20;
+      if (!b._restT) b._restT = 0;
+      if (resting) b._restT += FRAME_DT; else b._restT = 0;
+      var wedged = b._restT > WEDGE_IDLE && b.y < DRAIN_Y - 40;
+      if (onPlunger || inPocket || wedged) {
         if (!b._laneTimer) b._laneTimer = world.simTime;
-        else if (world.simTime - b._laneTimer > LANE_IDLE && b.speed() < 400) {
-          // sink the caught ball and belt a fresh one onto the plunger
+        else if (world.simTime - b._laneTimer > LANE_IDLE) {
+          // Exhaustion guard: a ball the wedge net keeps relaunching but never
+          // escapes (it just re-wedges in the same pocket) is drained instead of
+          // looping forever. Real tables nudge a stuck ball until it gives up.
+          if (!b._relaunchCount) b._relaunchCount = 0;
+          if (b._relaunchCount >= WEDGE_DRAIN_AFTER) {
+            // Drain it: count as a lost ball the way a physical drain does.
+            b.active = false;
+            world.balls.splice(j, 1);
+            this.ballsInPlay--;
+            break;
+          }
+          b._relaunchCount++;
+          // sink the caught ball and belt a fresh one onto the plunger; the
+          // launch's kickout then re-ejects it into play.
           b.active = false;
           world.balls.splice(j, 1);
           var nb = world.addBall(LANE_CX, SHOOT_Y);
@@ -551,11 +654,16 @@
     if (power == null) power = 1;          // default to full charge
     var b = world.addBall(LANE_CX, SHOOT_Y);
     // Launch is mostly vertical with a GENTLE constant leftward drift so the ball
-    // floats out of the open chamber and arcs LEFT into play. A strong kick (the
-    // old reactive -1500 impulse) overshot every shot; a small initial vx lets the
-    // natural rise carry it across the divider tip at any power.
+    // floats out of the open chamber and arcs LEFT into play. The vertical impulse is
+    // FLOORED at -2500 so even the weakest launch still rises past the divider tip
+    // (y1900) before arcing left — without the floor, low-power launches never gained
+    // enough height to cross x1005 while still rising and trapped in the shooter lane.
     var LVX = -260;
-    b.applyImpulse(LVX, -power * 2900 - 300);
+    // Floor the vertical impulse at -2500 so the ball always rises past the lane
+    // divider tip (y1900) before arcing left — low-power launches without the floor
+    // never gained enough height to cross x1005 while still rising and trapped the
+    // ball in the shooter lane forever.
+    b.applyImpulse(LVX, -Math.max(power * 2900 + 300, 2500));
     if (this.extraBallPending) {
       this.extraBallPending = false;
     }

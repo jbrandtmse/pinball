@@ -305,7 +305,13 @@
           // penetration = how far the ball is inside the rail surface
           var pen = ball.r - (cp.dist - (s.thickness || 0));
           if (pen > 0) {
-            if (globalThis.__dbg) console.log("[COLL] seg"+k+" d="+cp.dist.toFixed(1)+" pen="+pen.toFixed(1)+" at "+ball.x.toFixed(0)+","+ball.y.toFixed(0));
+            if (s.id === 34 && globalThis.__dbg) {
+              console.log("[PRE-COLL] seg34 ball(" + ball.x.toFixed(1) + "," + ball.y.toFixed(1) + ") cp.dist=" + cp.dist.toFixed(1) + " pen=" + pen.toFixed(1) + " th=" + (s.thickness || 0) + " closestPt(" + cp.point.x.toFixed(1) + "," + cp.point.y.toFixed(1) + ")");
+            }
+            if (s.id === 36 && globalThis.__dbg) {
+              console.log("[PRE-COLL] seg36 ball(" + ball.x.toFixed(1) + "," + ball.y.toFixed(1) + ") cp.dist=" + cp.dist.toFixed(1) + " pen=" + pen.toFixed(1) + " th=" + (s.thickness || 0) + " closestPt(" + cp.point.x.toFixed(1) + "," + cp.point.y.toFixed(1) + ")");
+            }
+            if (globalThis.__dbg) console.log("[COLL] seg"+k+" d="+cp.dist.toFixed(1)+" pen="+pen.toFixed(1)+" at "+ball.x.toFixed(0)+","+ball.y.toFixed(0)+" id="+s.id+" kind="+s.kind);
             this.resolveSegment(ball, s, cp, pen);
           }
         }
@@ -432,6 +438,9 @@
       ball.vy -= (1 + e) * vn * ny;
       // add segment transport velocity back
       ball.vx += s.vx; ball.vy += s.vy;
+      if (typeof DEBUG_COLL !== 'undefined' && DEBUG_COLL) {
+        console.log(`COLL s=${s.id} x=${Math.round(ball.x)} y=${Math.round(ball.y)} vy=${Math.round(ball.vy)} a=[${Math.round(s.a.x)},${Math.round(s.a.y)}] b=[${Math.round(s.b.x)},${Math.round(s.b.y)}]`);
+      }
       if (s.onHit && -vn > this.APPROACH_DEAD) {
         this._fire(ball, 's' + s.id, function () { s.onHit(ball, nx, ny); });
       }

@@ -15,16 +15,24 @@
     }
     #wrap {
       display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
-      height: 100vh;
+      align-items: center; justify-content: center;
+      height: 100vh; width: 100vw;
     }
     h1 {
       margin: 8px 0 4px; font-size: 20px; letter-spacing: 2px;
       color: #ff9d2e; text-transform: uppercase;
     }
+    /*
+      The canvas is sized entirely by main.js / render.js resize(), which fills
+      the window while preserving the table's portrait aspect. The JS sets an
+      inline width/height, so the stylesheet must NOT impose its own width/height
+      (that would fight the JS). We only size the container to fit and let the
+      canvas fill it via max-width/max-height: 100%.
+    */
     #table {
       display: block;
-      width: min(96vw, 90vh * 0.435);
+      max-width: 96vw;
+      max-height: 88vh;
       height: auto;
       border: 2px solid #2a2f3a;
       border-radius: 8px;
@@ -47,10 +55,11 @@
     </div>
   </div>
 
-  <!-- Load order matters: engine first, then table (needs engine), then renderer, then loop. -->
-  <script src="js/engine.js"></script>
-  <script src="js/table.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/main.js"></script>
+  <!-- Load order matters: engine first, then table (needs engine), then renderer, then loop.
+       ?v= busts the HTTP cache so edits always take effect in the browser. -->
+  <script src="js/engine.js?v=3"></script>
+  <script src="js/table.js?v=3"></script>
+  <script src="js/render.js?v=3"></script>
+  <script src="js/main.js?v=3"></script>
 </body>
 </html>

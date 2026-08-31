@@ -45,12 +45,22 @@
     this._lastW = 0;
   }
 
-  // Recompute scale so the playfield fills the canvas width.
+  // Recompute scale so the playfield fills the available window space while
+  // preserving its tall portrait aspect (PA.WIDTH / PA.HEIGHT). We derive the
+  // size from the window so it never gets squeezed into a landscape sliver (the
+  // old clientHeight-based read produced a 352x176 box on a wide window).
   Renderer.prototype.resize = function () {
-    var c = this.canvas, ctx = this.ctx;
+    var c = this.canvas, ctx = c.getContext('2d');
     var dpr = (window && window.devicePixelRatio) || 1;
-    var cssW = c.clientWidth || c.parentNode.clientWidth || 1200;
-    var cssH = c.clientHeight || c.parentNode.clientHeight || 2760;
+    var aspect = PA.WIDTH / PA.HEIGHT;               // ~0.435 (portrait)
+    var availW = window.innerWidth || 1200;
+    var availH = window.innerHeight || 2760;
+    // Fit to width, then shrink to fit height if that overflows the window.
+    var cssW = availW;
+    var cssH = cssW / aspect;
+    if (cssH > availH) { cssH = availH; cssW = cssH * aspect; }
+    cssW = Math.max(1, Math.round(cssW));
+    cssH = Math.max(1, Math.round(cssH));
     c.width = Math.round(cssW * dpr);
     c.height = Math.round(cssH * dpr);
     c.style.width = cssW + 'px';
@@ -58,7 +68,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.scale = cssW / PA.WIDTH;
     this._lastW = cssW;
-    this._lastH = cssH;
+    this._lastH = cssH;   // used by the camera (viewH = _lastH / scale)
   };
 
   // Vertical camera: center on the midpoint of all active balls so multiball
@@ -74,6 +84,10 @@
         if (balls[i].y > maxY) maxY = balls[i].y;
       }
       if (isFinite(minY)) midY = (minY + maxY) / 2;
+    } else {
+      // No ball in play: aim at the shooter lane / flipper zone so the idle
+      // screen shows the plunger and flippers instead of empty drain space.
+      midY = PA.SHOOT_Y - 40;
     }
     var viewH = this._lastH / this.scale;
     return clamp(midY - viewH / 2, 0, Math.max(0, PA.HEIGHT - viewH));
