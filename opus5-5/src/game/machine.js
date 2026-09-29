@@ -9,7 +9,7 @@ import T from '../table/layout.js';
 // Game speed: the simulation clock runs at this fraction of real time. Scaling
 // time (rather than individual speeds) keeps every trajectory, bounce and shot
 // angle identical while the ball moves visibly slower.
-export const GAME_SPEED = 0.85;
+export const GAME_SPEED = 0.765;
 
 const SHOOTER_X = T.plunger.laneX;
 const SHOOTER_REST_Y = T.plunger.y - PHYS.ballR - 0.005;
