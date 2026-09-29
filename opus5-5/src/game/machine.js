@@ -268,6 +268,13 @@ export class Machine {
   // come to rest somewhere other than the shooter lane, a scoop or a cradle.
   ballSearch(dt) {
     for (const b of this.world.balls) {
+      if (b.mode === 'path') {
+        // last-resort: a ball can't live on a ramp forever
+        b.pathTime = (b.pathTime || 0) + dt;
+        if (b.pathTime > 8) { b.pathTime = 0; b.s = b.path.length; b.vs = 30; this.stats.rescues++; this.fx('ballSearch', { x: b.x, y: b.y }); }
+        continue;
+      }
+      b.pathTime = 0;
       if (b.mode !== 'pf') { b.stillTime = 0; continue; }
       const cradled = b.contactFlipper && b.contactFlipper.pressed;
       const inShooter = b.x > T.plunger.x0;

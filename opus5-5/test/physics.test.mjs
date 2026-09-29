@@ -95,6 +95,23 @@ function simBall(x, y, vx, vy, secs, opts = {}) {
   for (const name of Object.keys(TARGETS)) check((found[name] || 0) >= 2, `shot reachable: ${name} (${found[name] || 0} angles)`);
 }
 
+// Ramps and wireforms never let a stopped ball park on them
+{
+  const { world } = buildWorld();
+  let stuck = 0, total = 0;
+  for (const id of Object.keys(world.paths)) {
+    const P = world.paths[id];
+    for (let s = 0.05; s < P.length; s += 0.75) {
+      const { world: w } = buildWorld();
+      const b = w.addBall(0, 0);
+      w.putOnPath(b, w.paths[id], s, 0);
+      for (let t = 0; t < 6 && b.mode === 'path'; t += PHYS.dt) { w.step(); w.drainEvents(); }
+      total++; if (b.mode === 'path') stuck++;
+    }
+  }
+  check(stuck === 0, `no stall points on ramps/wireforms (${stuck}/${total})`);
+}
+
 // Containment: fast balls in random directions never escape the playfield
 {
   let escaped = 0;

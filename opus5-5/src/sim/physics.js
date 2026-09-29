@@ -375,7 +375,11 @@ export class World {
     const a = -PHYS.G * PHYS.rollFactor * here.slope;
     b.vs += a * h;
     const fr = p.friction * h;
-    if (Math.abs(b.vs) <= fr) b.vs = 0; else b.vs -= Math.sign(b.vs) * fr;
+    if (Math.abs(b.vs) < 2) {
+      // Nearly stopped on a flat crest: no real ramp is perfectly level, so the
+      // ball creeps downhill (or back toward the entrance) instead of parking.
+      b.vs += (Math.sign(a) || -1) * 10 * h;
+    } else b.vs -= Math.sign(b.vs) * fr;
     const s0 = b.s;
     b.s += b.vs * h;
     // path switches

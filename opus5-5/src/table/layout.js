@@ -215,11 +215,12 @@ export const ramps = {
   // one-way gate at the orbit mouth and carried over the nose into the inlane.
   returnL: {
     gate: { a: [0.02, 19.35], b: [1.38, 19.35] },
-    pts: [[0.7, 19.35, 0.0], [0.72, 20.6, 0.45], [0.95, 23.0, 0.85], [1.5, 25.6, 0.95], [2.2, 28.0, 0.75], [2.7, 29.9, 0.35], [2.8, 30.7, 0.1]],
+    // rises no faster than the playfield falls away, so the wire always runs downhill
+    pts: [[0.7, 19.35, 0.0], [0.72, 20.6, 0.1], [0.95, 23.0, 0.33], [1.5, 25.6, 0.55], [2.2, 28.0, 0.45], [2.7, 29.9, 0.25], [2.8, 30.7, 0.08]],
   },
   returnR: {
     gate: { a: [mx(1.38), 19.35], b: [mx(0.02), 19.35] },
-    pts: [[mx(0.7), 19.35, 0.0], [mx(0.72), 20.6, 0.45], [mx(0.95), 23.0, 0.85], [mx(1.5), 25.6, 0.95], [mx(2.2), 28.0, 0.75], [mx(2.7), 29.9, 0.35], [mx(2.8), 30.7, 0.1]],
+    pts: [[mx(0.7), 19.35, 0.0], [mx(0.72), 20.6, 0.1], [mx(0.95), 23.0, 0.33], [mx(1.5), 25.6, 0.55], [mx(2.2), 28.0, 0.45], [mx(2.7), 29.9, 0.25], [mx(2.8), 30.7, 0.08]],
   },
   // Hideout up-kicker: pops the ball up onto the right wireform
   vuk: {
