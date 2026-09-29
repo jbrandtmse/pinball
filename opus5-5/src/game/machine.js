@@ -6,6 +6,11 @@ import { buildWorld } from '../table/build.js';
 import { PHYS } from '../sim/physics.js';
 import T from '../table/layout.js';
 
+// Game speed: the simulation clock runs at this fraction of real time. Scaling
+// time (rather than individual speeds) keeps every trajectory, bounce and shot
+// angle identical while the ball moves visibly slower.
+export const GAME_SPEED = 0.85;
+
 const SHOOTER_X = T.plunger.laneX;
 const SHOOTER_REST_Y = T.plunger.y - PHYS.ballR - 0.005;
 
@@ -33,6 +38,7 @@ export class Machine {
     this.buttons = { left: false, right: false };
     this.stats = { searches: 0, rescues: 0 };
     this.autoPlungeEnabled = false;
+    this.timeScale = opts.timeScale ?? GAME_SPEED;
 
     // captures
     h.captures.hideout.onEnter = (b) => this.capture('hideout', b);
@@ -194,8 +200,10 @@ export class Machine {
   }
 
   // ------------------------------------------------------------ simulation
-  update(dt) {
-    dt = Math.min(dt, 0.05);
+  // dtReal: wall-clock seconds since the last frame
+  update(dtReal) {
+    dtReal = Math.min(dtReal, 0.05);
+    const dt = dtReal * this.timeScale; // simulation time
     this.acc += dt;
     const h = PHYS.dt;
     while (this.acc >= h) {
@@ -211,10 +219,11 @@ export class Machine {
       }
     }
     this._tryServe();
-    this.tiltBob = Math.max(0, this.tiltBob - dt * 1.6);
-    this.tiltWarnCooldown -= dt;
-    this.shake.x *= Math.pow(0.02, dt); this.shake.y *= Math.pow(0.02, dt);
-    this.ballSearch(dt);
+    // the tilt bob, cabinet shake and ball search run on the player's clock
+    this.tiltBob = Math.max(0, this.tiltBob - dtReal * 1.6);
+    this.tiltWarnCooldown -= dtReal;
+    this.shake.x *= Math.pow(0.02, dtReal); this.shake.y *= Math.pow(0.02, dtReal);
+    this.ballSearch(dtReal);
   }
 
   processEvents() {

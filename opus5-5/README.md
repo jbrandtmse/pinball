@@ -71,6 +71,9 @@ the plunger, and the top of the screen to start.
 - Slingshots and pop bumpers are active kickers (~3 m/s). Ramps and wireforms are 3D
   splines with the ball's speed integrated along the slope, so weak ramp shots roll back.
 - Physics runs at a fixed 2 kHz sub-step, independent of frame rate.
+- For playability, the simulation clock runs at 85% of real time (`GAME_SPEED`
+  in `src/game/machine.js`). Every trajectory is unchanged; the ball just moves
+  15% slower. Set it to `1` for full-speed physics.
 
 ## Architecture
 
