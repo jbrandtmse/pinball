@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Midnight Heist</title>
+<style>
+  :root {
+    --gold: #d9b25a; --gold-2: #f3dc9a; --ink: #07060d; --panel: rgba(12, 10, 22, 0.92);
+    --text: #efe6d0; --muted: #a79f8c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #05040a; color: var(--text); overflow: hidden;
+    font-family: Georgia, 'Times New Roman', serif; }
+  #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  #dmdWrap {
+    position: fixed; left: 50%; top: 10px; transform: translateX(-50%);
+    width: min(48vw, 70vh * 4 / 1.6, 860px); padding: 10px 12px 12px;
+    background: linear-gradient(#2a2233, #0f0b16); border: 2px solid var(--gold);
+    border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,0.7), inset 0 0 18px rgba(0,0,0,0.9);
+  }
+  #dmdWrap::before, #dmdWrap::after { content: ''; position: absolute; top: 50%; width: 10px; height: 10px; margin-top: -5px;
+    border-radius: 50%; background: radial-gradient(#fff5d0, #9a7a30); }
+  #dmdWrap::before { left: -6px; } #dmdWrap::after { right: -6px; }
+  #dmd { width: 100%; aspect-ratio: 4 / 1; display: block; border-radius: 2px; filter: drop-shadow(0 0 6px rgba(255,110,20,0.55)); }
+  #helpBtn { position: fixed; right: 14px; top: 14px; background: var(--panel); color: var(--gold-2); border: 1px solid var(--gold);
+    border-radius: 4px; padding: 6px 12px; font: bold 14px Georgia, serif; cursor: pointer; letter-spacing: 1px; }
+  #helpBtn:hover { background: #221a33; }
+  .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(3,2,8,0.55); z-index: 10; }
+  .overlay.show { display: flex; }
+  .card { background: var(--panel); border: 2px solid var(--gold); border-radius: 8px; padding: 22px 28px; max-width: min(760px, 92vw);
+    max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+  .card h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: 4px; color: var(--gold-2); text-align: center; }
+  .card h2 { margin: 18px 0 8px; font-size: 15px; letter-spacing: 3px; color: var(--gold); border-bottom: 1px solid #4a3d22; padding-bottom: 4px; }
+  .tag { text-align: center; color: var(--muted); font-style: italic; margin-bottom: 8px; }
+  .grid { display: grid; grid-template-columns: max-content 1fr; gap: 5px 16px; font-size: 14px; }
+  kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border: 1px solid #6c5a33; border-bottom-width: 2px; border-radius: 4px;
+    background: #1b1626; color: var(--gold-2); font: 12px/18px ui-monospace, Consolas, monospace; text-align: center; margin-right: 3px; }
+  ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.5; }
+  .close { display: block; margin: 18px auto 0; background: var(--gold); color: var(--ink); border: 0; border-radius: 4px; padding: 8px 22px;
+    font: bold 15px Georgia, serif; cursor: pointer; letter-spacing: 2px; }
+  #paused .card { text-align: center; } #paused h1 { font-size: 40px; }
+  #toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--gold);
+    color: var(--gold-2); padding: 6px 16px; border-radius: 4px; font-size: 14px; letter-spacing: 2px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  #gauge { position: fixed; right: 22px; bottom: 60px; width: 18px; height: 180px; border: 2px solid var(--gold); border-radius: 4px;
+    background: rgba(10,8,18,0.85); opacity: 0; transition: opacity .15s; pointer-events: none; }
+  #gauge.show { opacity: 1; }
+  #gaugeFill { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 0; border-radius: 2px;
+    background: linear-gradient(0deg, #ffb030, #ff3040); }
+  #gaugeSkill { position: absolute; left: 0; right: 0; bottom: 10%; height: 40%; background: rgba(120,255,160,0.18);
+    border-top: 1px dashed rgba(120,255,160,0.6); border-bottom: 1px dashed rgba(120,255,160,0.6); }
+  #gauge span { position: absolute; top: 50%; right: 26px; transform: translateY(-50%) rotate(-90deg); transform-origin: right center;
+    font-size: 11px; letter-spacing: 3px; color: var(--muted); white-space: nowrap; }
+  #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; letter-spacing: 6px; color: var(--gold); background: #05040a; z-index: 20; }
+  #hint { position: fixed; left: 14px; bottom: 12px; color: var(--muted); font-size: 12px; letter-spacing: 1px; pointer-events: none; }
+  @media (max-width: 700px) { #dmdWrap { width: 94vw; top: 6px; } #helpBtn { top: auto; bottom: 12px; } #hint { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="dmdWrap"><canvas id="dmd" width="768" height="192"></canvas></div>
+<button id="helpBtn" title="Controls &amp; rules (H)">? HELP</button>
+<div id="hint">1 / ENTER start &nbsp;·&nbsp; SHIFT or Z / &#47; flippers &nbsp;·&nbsp; SPACE plunger &nbsp;·&nbsp; H help</div>
+<div id="toast"></div>
+<div id="gauge"><div id="gaugeSkill"></div><div id="gaugeFill"></div><span>PLUNGER</span></div>
+<div id="loading">LOADING…</div>
+
+<div id="help" class="overlay show">
+  <div class="card">
+    <h1>MIDNIGHT HEIST</h1>
+    <div class="tag">One night. One vault. No second chances.</div>
+    <h2>CONTROLS</h2>
+    <div class="grid">
+      <div><kbd>L-Shift</kbd><kbd>Z</kbd><kbd>←</kbd></div><div>Left flipper</div>
+      <div><kbd>R-Shift</kbd><kbd>/</kbd><kbd>→</kbd></div><div>Right flipper</div>
+      <div><kbd>Space</kbd><kbd>Enter</kbd><kbd>↓</kbd></div><div>Plunger — hold to pull back, release to launch. A light tap is a soft plunge.</div>
+      <div><kbd>1</kbd><kbd>S</kbd></div><div>Start game / add a player during ball 1 (up to 4)</div>
+      <div><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd></div><div>Nudge left / up / right — careful, the tilt bob is watching</div>
+      <div><kbd>V</kbd> <kbd>G</kbd></div><div>Change camera (player · overhead · cinematic) · graphics quality</div>
+      <div><kbd>P</kbd><kbd>Esc</kbd></div><div>Pause</div>
+      <div><kbd>M</kbd> <kbd>F</kbd> <kbd>H</kbd></div><div>Music/sound · fullscreen · this card</div>
+    </div>
+    <h2>THE JOB</h2>
+    <ul>
+      <li><b>Skill shot:</b> soft-plunge into the flashing <b>K-E-Y</b> lane (flippers move it). Full plunge, then make the <b>GETAWAY</b> ramp for a <b>super skill shot</b>.</li>
+      <li><b>K-E-Y lanes</b> raise the bonus multiplier (up to 6X) and relight the kickback.</li>
+      <li>Knock down the <b>laser grid</b> drop targets to reach the vault. Crack the door, then shoot the vault to <b>lock</b> a ball.</li>
+      <li>Lock 3 balls for <b>VAULT MULTIBALL</b>. Ramps and loops score <b>jackpots</b>; collect all four to light the <b>super jackpot</b> in the vault.</li>
+      <li>3 loops light <b>START JOB</b> at the <b>hideout</b>. Pick a job with the flippers: Case the Joint, Crack the Safe, Laser Maze, Getaway Drive, Inside Man, Double Cross.</li>
+      <li>Play all six jobs to light <b>THE BIG SCORE</b>, a 4-ball wizard mode worth 100,000,000 in the vault.</li>
+      <li>12 ramps, 3 completed jobs or your first multiball light an <b>extra ball</b> at the hideout. Hit both yellow standups to light the kickback or spinner.</li>
+    </ul>
+    <button class="close" id="closeHelp">PLAY</button>
+  </div>
+</div>
+<div id="paused" class="overlay"><div class="card"><h1>PAUSED</h1><div class="tag">Press P or Esc to resume</div></div></div>
+
+<script src="dist/midnight-heist.js"></script>
+</body>
+</html>
