@@ -798,9 +798,10 @@ export class Game {
     if (this.state === 'jobselect' && inPlay > 0) return;
     // ball save
     if (!this.tilted && this.ballActive && this.ballSaveUntil > 0 && this.t < this.ballSaveUntil + 2) {
-      this.m.serveBall(true);
+      // hold the replacement in the shooter lane briefly so the player is ready
+      this.m.serveBall(true, this.mb || this.wizard ? 0.8 : 1.5);
       this.sfx('ballSave'); this.say('Ball saved');
-      if (!this.mb && !this.wizard) this.show(S.bigText('BALL SAVED', ''), 1.5, 6);
+      if (!this.mb && !this.wizard) this.show(S.bigText('BALL SAVED', 'GET READY'), 1.8, 6);
       this.log('ballSaved');
       return;
     }

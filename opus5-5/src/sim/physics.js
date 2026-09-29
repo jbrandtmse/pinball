@@ -32,7 +32,9 @@ export const MATERIALS = {
   plastic: { e: 0.50, falloff: 0.32, fric: 0.08, soft: 5 },
   rubber:  { e: 0.86, falloff: 0.48, fric: 0.20, soft: 8 },
   post:    { e: 0.72, falloff: 0.42, fric: 0.18, soft: 8 },
-  flipper: { e: 0.84, falloff: 0.52, fric: 0.28, soft: 40 },
+  // flipper rubber grips: a ball meeting a raised bat loses most of its speed
+  // along it, which is what makes inlane traps and dead-bounce catches possible
+  flipper: { e: 0.84, falloff: 0.52, fric: 0.5, soft: 40, grip: 0.72 },
   target:  { e: 0.36, falloff: 0.30, fric: 0.08, soft: 5 },
   bumper:  { e: 0.55, falloff: 0.30, fric: 0.08, soft: 5 },
   gate:    { e: 0.25, falloff: 0.30, fric: 0.04, soft: 5 },
@@ -605,7 +607,7 @@ export class World {
     // Sustained/rolling contacts carry no sliding friction; only real impacts
     // scrub tangential speed (the ball skids and picks up spin).
     if (vt > 1e-6 && impact > 4) {
-      const dv = Math.min(mat.fric * (1 + e) * impact, vt * (2 / 7));
+      const dv = Math.min(mat.fric * (1 + e) * impact, vt * (mat.grip ?? 2 / 7));
       newVt = vt - dv;
       tx *= newVt / vt; ty *= newVt / vt;
     }

@@ -97,7 +97,7 @@ export function buildWorld() {
     const path = world.addPath(new Path(id, R.pts, {
       friction: 5,
       switches: [{ id: id + 'Made', at: R.madeAt }],
-      maxExitSpeed: 95,
+      maxExitSpeed: 45, // habitrails drop the ball into the inlane gently
     }));
     h.paths[id] = path;
     const m = R.mouth;
@@ -115,7 +115,7 @@ export function buildWorld() {
   // Orbit returns: balls travelling down an orbit ride a wireform to the inlane
   for (const id of ['returnL', 'returnR']) {
     const R = T.ramps[id];
-    const path = world.addPath(new Path(id, R.pts, { friction: 3, maxExitSpeed: 80 }));
+    const path = world.addPath(new Path(id, R.pts, { friction: 3, maxExitSpeed: 40 }));
     h.paths[id] = path;
     const g = R.gate;
     world.addTrigger(lineTrigger(id + 'Gate', g.a[0], g.a[1], g.b[0], g.b[1], {
@@ -147,7 +147,7 @@ export function buildWorld() {
 
   // Plunger
   world.plunger = h.plunger = new Plunger({
-    x0: T.plunger.x0, x1: T.plunger.x1, y: T.plunger.y, speedFn: plungerSpeed, autoSpeed: 215,
+    x0: T.plunger.x0, x1: T.plunger.x1, y: T.plunger.y, speedFn: plungerSpeed, autoSpeed: 175,
   });
 
   world.drainTest = (b) => b.y > T.drainY && b.x < 18.6;

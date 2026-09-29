@@ -99,9 +99,11 @@ export class Machine {
     return this.world.balls.find(b => b.mode === 'pf' && b.x > T.plunger.x0 && b.y > 30);
   }
   // Put a ball from the trough into the shooter lane (queued if the lane is busy)
-  serveBall(auto = false) {
+  // auto: fire the auto-plunger once the ball is in the lane; delay: how long
+  // to hold it there first (a ball save gives the player a moment to get set)
+  serveBall(auto = false, delay = 0.55) {
     this.serveQueue++;
-    if (auto) this.autoLaunchPending++;
+    if (auto) { this.autoLaunchPending++; (this.launchDelays ||= []).push(delay); }
   }
   _tryServe() {
     if (this.serveQueue <= 0 || this.trough <= 0) return;
@@ -113,7 +115,7 @@ export class Machine {
     this._serveAt = this.time + 0.4;
     if (this.autoLaunchPending > 0) {
       this.autoLaunchPending--;
-      this.after(0.55, () => this.autoLaunch());
+      this.after(this.launchDelays.shift() ?? 0.55, () => this.autoLaunch());
     }
   }
   autoLaunch() {
@@ -295,7 +297,7 @@ export class Machine {
     this.world.balls.length = 0;
     this.held = { hideout: [], vault: [] };
     this.trough = this.totalBalls;
-    this.serveQueue = 0; this.autoLaunchPending = 0;
+    this.serveQueue = 0; this.autoLaunchPending = 0; this.launchDelays = [];
     this.timers = [];
     this.resetDrops();
     this.setDoor(false);

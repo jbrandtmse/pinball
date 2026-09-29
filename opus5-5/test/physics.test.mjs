@@ -70,6 +70,34 @@ function simBall(x, y, vx, vy, secs, opts = {}) {
   check(maxRise < 0.35, `ball does not bounce up off the flipper (${maxRise.toFixed(2)}")`);
 }
 
+// Feeds from the auto-plunger loop and both ramps arrive on the same-side
+// flipper at a catchable speed, and a player raising that flipper traps them.
+{
+  const feeds = [
+    ['auto-launch loop', 'flipL', (w) => { const b = w.addBall(19.525, 42.86); b.vy = -175; return b; }],
+    ['SKYWAY ramp', 'flipL', (w) => { const b = w.addBall(3.15, 21); w.putOnPath(b, w.paths.rampL, 0.02, 180); return b; }],
+    ['GETAWAY ramp', 'flipR', (w) => { const b = w.addBall(10.55, 21); w.putOnPath(b, w.paths.rampR, 0.02, 180); return b; }],
+  ];
+  for (const [name, side, make] of feeds) {
+    let firstOk = 0, caught = 0;
+    for (let k = 0; k < 6; k++) for (const hold of [false, true]) {
+      const { world, h } = buildWorld();
+      const b = make(world);
+      let first = null;
+      for (let t = 0; t < 5; t += PHYS.dt) {
+        if (hold && b.mode === 'pf' && b.vy > 0 && b.y > 29 && b.y < 34 && (b.x < 3.6 || (b.x > 14.9 && b.x < 18.6))) h.flippers[side].pressed = true;
+        world.step(); world.drainEvents();
+        if (!first && b.mode === 'pf' && b.contactFlipper) first = { id: b.contactFlipper.id, v: Math.hypot(b.vx, b.vy) };
+        if (b.mode === 'gone') break;
+      }
+      if (!hold && first && first.id === side && first.v < 50) firstOk++;
+      if (hold && b.mode === 'pf' && Math.hypot(b.vx, b.vy) < 3 && b.y > 35) caught++;
+    }
+    check(firstOk === 6, `${name} rolls onto ${side} at a catchable speed (${firstOk}/6)`);
+    check(caught === 6, `${name} is trapped by raising ${side} (${caught}/6)`);
+  }
+}
+
 // Cradle: a ball fed to a raised flipper comes to rest
 {
   const { world, h } = buildWorld();
