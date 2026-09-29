@@ -240,11 +240,12 @@ export function multiball() {
   return {
     draw(d, t) {
       // alarm lights sweeping
+      // spinning alarm beacons either side of the headline
       for (let i = 0; i < 2; i++) {
         const a = t * 6 + i * Math.PI;
-        const cx = i ? 118 : 10;
-        for (let r = 2; r < 18; r++) { d.px(cx + Math.cos(a) * r, 16 + Math.sin(a) * r * 0.6, 6); d.px(cx - Math.cos(a) * r, 16 - Math.sin(a) * r * 0.6, 6); }
-        d.circle(cx, 16, 3, 15, true);
+        const cx = i ? 96 : 32;
+        for (let r = 2; r < 12; r++) { d.px(cx + Math.cos(a) * r, 5 + Math.sin(a) * r * 0.35, 6); d.px(cx - Math.cos(a) * r, 5 - Math.sin(a) * r * 0.35, 6); }
+        d.circle(cx, 5, 2, 15, true);
       }
       const on = Math.floor(t * 8) % 2 === 0;
       d.text('VAULT', 64, 2, { align: 'center', bold: true, v: on ? 15 : 9 });
@@ -370,12 +371,13 @@ export function hsEntry(getHs) {
       d.text(h.rank === 0 ? 'GRAND CHAMPION!' : 'ENTER INITIALS', 64, 7, { align: 'center', bold: true });
       for (let i = 0; i < 3; i++) {
         const ch = h.charset[h.letters[i]];
-        const x = 46 + i * 14;
+        const x = 14 + i * 15;
         const cur = i === h.pos;
         const v = cur ? (Math.floor(t * 5) % 2 ? 15 : 6) : i < h.pos ? 15 : 4;
         d.bigText(ch === ' ' ? '_' : ch, x + 3, 16, { scale: 2, align: 'center', v });
       }
-      d.text(fmt(h.player.score), 124, 26, { align: 'right', font: 'f3', v: 8 });
+      d.text(fmt(h.player.score), 126, 20, { align: 'right', font: 'f3', v: 9 });
+      d.text('FLIPPERS + START', 126, 27, { align: 'right', font: 'f3', v: 5 });
     },
   };
 }
