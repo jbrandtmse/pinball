@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QUANTUM CORE: MELTDOWN - Williams Arcade Pinball</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #05070d;
+      color: #e0e6ed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 3D Viewport Container */
+    #viewport-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #viewport-container canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top HUD & DMD Housing */
+    #top-hud {
+      position: absolute;
+      top: 12px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Williams Authentic DMD Housing */
+    .dmd-housing {
+      background: linear-gradient(180deg, #22252c 0%, #0d0f14 100%);
+      padding: 6px 14px 10px 14px;
+      border-radius: 8px;
+      border: 3px solid #3a404d;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dmd-bezel-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #ff9900;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      text-shadow: 0 0 6px rgba(255, 153, 0, 0.6);
+    }
+
+    #dmd-canvas {
+      width: 480px;
+      height: 120px;
+      background-color: #0a0400;
+      border: 2px solid #5a2600;
+      border-radius: 4px;
+      box-shadow: inset 0 0 12px rgba(255, 120, 0, 0.3), 0 0 15px rgba(255, 120, 0, 0.2);
+    }
+
+    /* Quick HUD Info Chips */
+    .hud-chips {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .hud-chip {
+      background: rgba(10, 15, 25, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 225, 255, 0.3);
+      font-size: 13px;
+      font-weight: 700;
+      color: #00e5ff;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-chip.score-chip {
+      color: #ffaa00;
+      border-color: rgba(255, 170, 0, 0.4);
+      font-size: 15px;
+    }
+
+    /* Bottom Arcade Controls & Legend */
+    #bottom-bar {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .bar-group {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .arcade-btn {
+      background: linear-gradient(180deg, #1f293d 0%, #101522 100%);
+      color: #ffffff;
+      border: 1px solid #334466;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      transition: all 0.15s ease;
+    }
+
+    .arcade-btn:hover {
+      background: linear-gradient(180deg, #2b3955 0%, #161e31 100%);
+      border-color: #00ffff;
+      box-shadow: 0 0 14px rgba(0, 255, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .arcade-btn:active {
+      transform: translateY(1px);
+    }
+
+    .arcade-btn.primary {
+      background: linear-gradient(180deg, #ff7b00 0%, #bb4400 100%);
+      border-color: #ffaa33;
+      box-shadow: 0 0 16px rgba(255, 120, 0, 0.5);
+    }
+
+    .arcade-btn.primary:hover {
+      background: linear-gradient(180deg, #ff9429 0%, #cc5500 100%);
+      box-shadow: 0 0 22px rgba(255, 140, 0, 0.7);
+    }
+
+    .controls-legend {
+      background: rgba(8, 12, 20, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      gap: 16px;
+    }
+
+    .controls-legend span b {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 2px;
+    }
+
+    /* On-Screen Touch / Mouse Controls (Responsive) */
+    .touch-controls {
+      position: absolute;
+      bottom: 70px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .touch-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(20, 30, 50, 0.65);
+      border: 2px solid rgba(0, 225, 255, 0.5);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: auto;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    .touch-btn:active {
+      background: rgba(0, 225, 255, 0.4);
+      transform: scale(0.94);
+    }
+
+    .touch-btn.plunger-btn {
+      width: 72px;
+      height: 100px;
+      border-radius: 36px;
+      background: rgba(50, 25, 10, 0.65);
+      border-color: rgba(255, 140, 0, 0.6);
+    }
+
+    .touch-btn.plunger-btn:active {
+      background: rgba(255, 140, 0, 0.4);
+    }
+
+    .touch-group {
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+    }
+
+    /* High Scores Modal */
+    .modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: linear-gradient(180deg, #131929 0%, #0a0d16 100%);
+      border: 2px solid #00f0ff;
+      border-radius: 12px;
+      padding: 28px;
+      width: 440px;
+      max-width: 90vw;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.3);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffaa00;
+      text-align: center;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 12px rgba(255, 170, 0, 0.5);
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      font-size: 15px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .score-row:first-child {
+      color: #00ffff;
+    }
+
+    .score-row .rank {
+      color: #94a3b8;
+      width: 32px;
+    }
+
+    .score-row .initials {
+      letter-spacing: 4px;
+    }
+
+    .score-row .points {
+      color: #ffb703;
+    }
+
+    .modal-close {
+      margin-top: 22px;
+      width: 100%;
+      padding: 10px;
+      background: #202b42;
+      color: #ffffff;
+      border: 1px solid #3a4b70;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      background: #2b3958;
+      border-color: #00ffff;
+    }
+
+    @media (max-width: 768px) {
+      #dmd-canvas {
+        width: 340px;
+        height: 85px;
+      }
+      .controls-legend {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Three.js 3D WebGL Canvas Container -->
+  <div id="viewport-container"></div>
+
+  <!-- Top HUD: Williams DMD Display and Stats -->
+  <div id="top-hud">
+    <div class="dmd-housing">
+      <div class="dmd-bezel-title">WILLIAMS WPC-95 DOT MATRIX DISPLAY</div>
+      <canvas id="dmd-canvas"></canvas>
+    </div>
+
+    <div class="hud-chips">
+      <div class="hud-chip score-chip">SCORE: <span id="hud-score">0</span></div>
+      <div class="hud-chip"><span id="hud-ball">BALL 1</span></div>
+      <div class="hud-chip"><span id="hud-temp">CORE: 100%</span></div>
+      <div class="hud-chip"><span id="hud-mult">1X</span></div>
+    </div>
+  </div>
+
+  <!-- Touch Controls Overlay for Mobile / Mouse -->
+  <div class="touch-controls">
+    <div class="touch-group">
+      <button id="touch-left-flipper" class="touch-btn">
+        <span>LEFT</span>
+        <span>FLIP</span>
+      </button>
+      <button id="touch-nudge-left" class="touch-btn" style="width: 50px; height: 50px; font-size: 10px;">
+        <span>NUDGE</span>
+      </button>
+    </div>
+
+    <div class="touch-group">
+      <button id="touch-nudge-right" class="touch-btn" style="width: 50px; height: 50px; font-size: 10px;">
+        <span>NUDGE</span>
+      </button>
+      <button id="touch-plunger" class="touch-btn plunger-btn">
+        <span>PULL</span>
+        <span>LAUNCH</span>
+      </button>
+      <button id="touch-right-flipper" class="touch-btn">
+        <span>RIGHT</span>
+        <span>FLIP</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Control Bar -->
+  <div id="bottom-bar">
+    <div class="bar-group">
+      <button id="btn-start" class="arcade-btn primary">START GAME (1)</button>
+      <button id="btn-camera" class="arcade-btn"><span id="camera-mode-label">VIEW: PLAYER</span> (C)</button>
+      <button id="btn-highscores" class="arcade-btn">HIGH SCORES</button>
+      <button id="btn-mute" class="arcade-btn">MUTE (M)</button>
+    </div>
+
+    <div class="controls-legend">
+      <span><b>SHIFT</b> / <b>Z, /</b> Flippers</span>
+      <span><b>SPACE</b> / <b>DOWN</b> Plunger</span>
+      <span><b>Q, W, E</b> Nudge</span>
+      <span><b>C</b> Camera</span>
+      <span><b>1</b> Start</span>
+    </div>
+  </div>
+
+  <!-- High Scores Modal -->
+  <div id="high-scores-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-title">★ TOP OPERATORS ★</div>
+      <div id="high-scores-list"></div>
+      <button id="btn-close-scores" class="modal-close">CLOSE</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+
