@@ -1,0 +1,19 @@
+{
+  "name": "pinball-classic",
+  "version": "1.0.0",
+  "description": "Williams-style arcade pinball game with realistic physics",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -l 3000",
+    "dev": "npx serve -l 3000"
+  },
+  "keywords": ["pinball", "arcade", "game", "physics"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  },
+  "dependencies": {
+    "matter-js": "^0.19.0"
+  }
+}

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinball Physics Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font-family: monospace;
+            color: #0f0;
+        }
+        #canvas-container {
+            position: relative;
+            border: 4px solid #0f0;
+            margin-bottom: 20px;
+        }
+        canvas { display: block; }
+        #controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #030;
+            color: #0f0;
+            border: 2px solid #0f0;
+        }
+        #status {
+            background: #000;
+            padding: 15px;
+            border: 2px solid #0f0;
+            min-width: 500px;
+            min-height: 100px;
+        }
+        .debug-info {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pinball Physics Test</h1>
+    <p>Controls: Left/Right Arrow for flippers, Space to launch, R to reset</p>
+    <div id="controls">
+        <button onclick="testFlippers()">Test Flippers (Hold)</button>
+        <button onclick="launchBall()">Launch Ball</button>
+        <button onclick="resetGame()">Reset</button>
+    </div>
+    <div id="canvas-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+    <div id="status">
+        <div class="debug-info">Status: Ready</div>
+    </div>
+
+    <script>
+        const WIDTH = 500;
+        const HEIGHT = 720;
+        const FLIPPER_WIDTH = 80;
+        const FLIPPER_HEIGHT = 12;
+        const BALL_RADIUS = 10;
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+
+        const Engine = Matter.Engine;
+        const World = Matter.World;
+        const Bodies = Matter.Bodies;
+        const Body = Matter.Body;
+        const Constraint = Matter.Constraint;
+
+        const engine = Engine.create();
+        const world = engine.world;
+        engine.gravity.y = 1.0;
+
+        let ball = null;
+        let leftFlipper, rightFlipper;
+        let leftFlipperUp = false;
+        let rightFlipperUp = false;
+        let leftPivot, rightPivot;
+        let leftConstraint, rightConstraint;
+        let walls = [];
+
+        const flipperY = HEIGHT - 60;
+        const leftPivotX = WIDTH / 2 - 60;
+        const rightPivotX = WIDTH / 2 + 60;
+        const flipperRestAngle = 28 * Math.PI / 180;
+        const flipperActiveAngle = -28 * Math.PI / 180;
+
+        function createFlippers() {
+            // Create pivot points (static bodies)
+            leftPivot = Bodies.circle(leftPivotX, flipperY, 8, {
+                isStatic: true,
+                render: { fillStyle: '#ff0000' },
+                label: 'leftPivot'
+            });
+
+            rightPivot = Bodies.circle(rightPivotX, flipperY, 8, {
+                isStatic: true,
+                render: { fillStyle: '#ff0000' },
+                label: 'rightPivot'
+            });
+
+            // Left flipper - dynamic body
+            leftFlipper = Bodies.rectangle(
+                leftPivotX + FLIPPER_WIDTH / 2,
+                flipperY,
+                FLIPPER_WIDTH,
+                FLIPPER_HEIGHT,
+                {
+                    label: 'leftFlipper',
+                    friction: 0.5,
+                    restitution: 0.6,
+                    density: 0.001
+                }
+            );
+
+            // Right flipper - dynamic body
+            rightFlipper = Bodies.rectangle(
+                rightPivotX - FLIPPER_WIDTH / 2,
+                flipperY,
+                FLIPPER_WIDTH,
+                FLIPPER_HEIGHT,
+                {
+                    label: 'rightFlipper',
+                    friction: 0.5,
+                    restitution: 0.6,
+                    density: 0.001
+                }
+            );
+
+            // Set initial rest angles
+            Body.setAngle(leftFlipper, flipperRestAngle);
+            Body.setAngle(rightFlipper, -flipperRestAngle);
+
+            // Create constraints to pin flipper ends to pivots
+            leftConstraint = Constraint.create({
+                bodyA: leftPivot,
+                bodyB: leftFlipper,
+                pointA: { x: 0, y: 0 },
+                pointB: { x: -FLIPPER_WIDTH / 2 + FLIPPER_HEIGHT, y: 0 },
+                stiffness: 1,
+                render: { visible: true, lineWidth: 3, strokeStyle: '#00ffff' }
+            });
+
+            rightConstraint = Constraint.create({
+                bodyA: rightPivot,
+                bodyB: rightFlipper,
+                pointA: { x: 0, y: 0 },
+                pointB: { x: FLIPPER_WIDTH / 2 - FLIPPER_HEIGHT, y: 0 },
+                stiffness: 1,
+                render: { visible: true, lineWidth: 3, strokeStyle: '#00ffff' }
+            });
+
+            World.add(world, [leftPivot, rightPivot, leftFlipper, rightFlipper, leftConstraint, rightConstraint]);
+        }
+
+        function createWalls() {
+            World.remove(world, walls);
+            walls = [];
+
+            // Left wall
+            walls.push(Bodies.rectangle(10, HEIGHT/2, 10, HEIGHT, { isStatic: true, render: { fillStyle: '#444' } }));
+
+            // Right wall
+            walls.push(Bodies.rectangle(WIDTH - 10, HEIGHT/2, 10, HEIGHT, { isStatic: true, render: { fillStyle: '#444' } }));
+
+            // Top curved wall (arch)
+            for (let i = 0; i < 10; i++) {
+                const angle = (Math.PI / 10) * i;
+                const x = WIDTH / 2 + Math.cos(angle) * 150;
+                const y = 100 - Math.sin(angle) * 100;
+                walls.push(Bodies.rectangle(x, y, 35, 10, {
+                    isStatic: true,
+                    angle: angle + Math.PI / 2,
+                    render: { fillStyle: '#444' }
+                }));
+            }
+
+            // Shooter lane walls
+            // Left wall of shooter lane (at x = WIDTH - 50)
+            walls.push(Bodies.rectangle(WIDTH - 50, HEIGHT - 150, 8, 300, {
+                isStatic: true,
+                label: 'shooterLeftWall',
+                render: { fillStyle: '#225555' }
+            }));
+
+            // Right wall of shooter lane (at x = WIDTH - 10)
+            walls.push(Bodies.rectangle(WIDTH - 10, HEIGHT - 150, 8, 300, {
+                isStatic: true,
+                label: 'shooterRightWall',
+                render: { fillStyle: '#225555' }
+            }));
+
+            // Top of shooter lane - curved outlet
+            for (let i = 0; i < 5; i++) {
+                const angle = (Math.PI / 4) * (i / 4);
+                const x = (WIDTH - 50) + Math.cos(angle) * 40;
+                const y = (HEIGHT - 250) - Math.sin(angle) * 40;
+                walls.push(Bodies.rectangle(x, y, 12, 10, {
+                    isStatic: true,
+                    angle: angle - Math.PI / 4,
+                    render: { fillStyle: '#225555' },
+                    restitution: 0.8
+                }));
+            }
+
+            World.add(world, walls);
+        }
+
+        function launchBall() {
+            if (ball) {
+                World.remove(world, ball);
+            }
+
+            // Spawn in shooter lane center
+            const shooterLaneX = WIDTH - 30;
+            const shooterLaneY = HEIGHT - 30;
+
+            ball = Bodies.circle(shooterLaneX, shooterLaneY, BALL_RADIUS, {
+                label: 'ball',
+                restitution: 0.8,
+                friction: 0.02,
+                density: 0.04
+            });
+
+            World.add(world, ball);
+
+            // Launch velocity - should go UP and LEFT to exit shooter lane
+            Body.setVelocity(ball, { x: -5, y: -30 });
+
+            updateStatus('Ball launched with velocity: x=-5, y=-30');
+        }
+
+        function resetGame() {
+            if (ball) {
+                World.remove(world, ball);
+                ball = null;
+            }
+            Body.setAngle(leftFlipper, flipperRestAngle);
+            Body.setAngle(rightFlipper, -flipperRestAngle);
+            updateStatus('Game reset');
+        }
+
+        function testFlippers() {
+            leftFlipperUp = true;
+            rightFlipperUp = false;
+            updateStatus('Testing flippers - Left flipper UP');
+            setTimeout(() => {
+                leftFlipperUp = false;
+                updateStatus('Flipper test complete');
+            }, 2000);
+        }
+
+        function updateFlipperAngles() {
+            const speed = 0.25;
+
+            // Left flipper
+            if (leftFlipperUp) {
+                if (leftFlipper.angle > flipperActiveAngle + 0.05) {
+                    Body.setAngularVelocity(leftFlipper, -speed);
+                } else {
+                    Body.setAngularVelocity(leftFlipper, 0);
+                    leftFlipper.angle = flipperActiveAngle;
+                    Body.setAngle(leftFlipper, flipperActiveAngle);
+                }
+            } else {
+                if (leftFlipper.angle < flipperRestAngle - 0.05) {
+                    Body.setAngularVelocity(leftFlipper, speed * 0.7);
+                } else {
+                    Body.setAngularVelocity(leftFlipper, 0);
+                    leftFlipper.angle = flipperRestAngle;
+                    Body.setAngle(leftFlipper, flipperRestAngle);
+                }
+            }
+
+            // Right flipper
+            if (rightFlipperUp) {
+                if (rightFlipper.angle < -flipperActiveAngle - 0.05) {
+                    Body.setAngularVelocity(rightFlipper, speed);
+                } else {
+                    Body.setAngularVelocity(rightFlipper, 0);
+                    rightFlipper.angle = -flipperActiveAngle;
+                    Body.setAngle(rightFlipper, -flipperActiveAngle);
+                }
+            } else {
+                if (rightFlipper.angle > -flipperRestAngle + 0.05) {
+                    Body.setAngularVelocity(rightFlipper, -speed * 0.7);
+                } else {
+                    Body.setAngularVelocity(rightFlipper, 0);
+                    rightFlipper.angle = -flipperRestAngle;
+                    Body.setAngle(rightFlipper, -flipperRestAngle);
+                }
+            }
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('status').innerHTML =
+                '<div class="debug-info">' + msg + '</div>' +
+                '<div class="debug-info">Left flipper angle: ' + (leftFlipper ? (leftFlipper.angle * 180 / Math.PI).toFixed(1) : 'N/A') + ' deg</div>' +
+                '<div class="debug-info">Right flipper angle: ' + (rightFlipper ? (rightFlipper.angle * 180 / Math.PI).toFixed(1) : 'N/A') + ' deg</div>' +
+                (ball ? '<div class="debug-info">Ball position: x=' + ball.position.x.toFixed(1) + ', y=' + ball.position.y.toFixed(1) + '</div>' : '');
+        }
+
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            // Draw walls
+            ctx.fillStyle = '#444';
+            for (const body of walls) {
+                drawBody(ctx, body);
+            }
+
+            // Draw shooter lane indicator
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(WIDTH - 55, 100, 45, HEIGHT - 130);
+            ctx.setLineDash([]);
+
+            // Draw pivot points
+            ctx.fillStyle = '#f00';
+            if (leftPivot) {
+                ctx.beginPath();
+                ctx.arc(leftPivot.position.x, leftPivot.position.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            if (rightPivot) {
+                ctx.beginPath();
+                ctx.arc(rightPivot.position.x, rightPivot.position.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw flipper constraints
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 3;
+            if (leftPivot && leftFlipper) {
+                ctx.beginPath();
+                ctx.moveTo(leftPivot.position.x, leftPivot.position.y);
+                const flipperCenter = leftFlipper.position;
+                ctx.lineTo(flipperCenter.x, flipperCenter.y);
+                ctx.stroke();
+            }
+            if (rightPivot && rightFlipper) {
+                ctx.beginPath();
+                ctx.moveTo(rightPivot.position.x, rightPivot.position.y);
+                const flipperCenter = rightFlipper.position;
+                ctx.lineTo(flipperCenter.x, flipperCenter.y);
+                ctx.stroke();
+            }
+
+            // Draw flippers
+            if (leftFlipper) drawBody(ctx, leftFlipper, '#0f0');
+            if (rightFlipper) drawBody(ctx, rightFlipper, '#0f0');
+
+            // Draw ball
+            if (ball) drawBody(ctx, ball, '#f55');
+
+            updateStatus(document.getElementById('status').innerHTML);
+
+            requestAnimationFrame(draw);
+        }
+
+        function drawBody(ctx, body, color) {
+            ctx.fillStyle = color || '#fff';
+            ctx.save();
+            ctx.translate(body.position.x, body.position.y);
+            ctx.rotate(body.angle);
+
+            if (body.vertices && body.vertices.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(body.vertices[0].x - body.position.x, body.vertices[0].y - body.position.y);
+                for (let i = 1; i < body.vertices.length; i++) {
+                    ctx.lineTo(body.vertices[i].x - body.position.x, body.vertices[i].y - body.position.y);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft') {
+                leftFlipperUp = true;
+                e.preventDefault();
+            } else if (e.code === 'ArrowRight') {
+                rightFlipperUp = true;
+                e.preventDefault();
+            } else if (e.code === 'Space') {
+                launchBall();
+                e.preventDefault();
+            } else if (e.code === 'KeyR') {
+                resetGame();
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft') {
+                leftFlipperUp = false;
+                e.preventDefault();
+            } else if (e.code === 'ArrowRight') {
+                rightFlipperUp = false;
+                e.preventDefault();
+            }
+        });
+
+        // Initialize
+        createFlippers();
+        createWalls();
+
+        // Run physics
+        const runner = Matter.Runner.create();
+        Matter.Runner.run(runner, engine);
+
+        // Start render loop
+        draw();
+    </script>
+</body>
+</html>
