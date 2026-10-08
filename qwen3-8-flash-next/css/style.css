@@ -1,0 +1,32 @@
+/* THUNDER CANYON */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 20%, #1c1026 0%, #0a0610 70%);
+  overflow: hidden;
+  font-family: Verdana, sans-serif;
+  user-select: none;
+}
+#cab {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 40px rgba(255, 120, 40, 0.15));
+}
+canvas#c {
+  display: block;
+  border-radius: 6px;
+  image-rendering: auto;
+}
+#help {
+  position: fixed;
+  bottom: 4px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #8a7458;
+  pointer-events: none;
+}
+#help span { margin: 0 8px; }
+#help b { color: #d9b06a; }

@@ -1,0 +1,10 @@
+{
+  "name": "thunder-canyon",
+  "version": "1.0.0",
+  "description": "THUNDER CANYON - a Williams-style pinball game (zero-dependency canvas, inch-based physics). Open index.html or run tests.",
+  "scripts": {
+    "test": "node test/headless.js",
+    "start": "python -m http.server 8123"
+  },
+  "license": "MIT"
+}
